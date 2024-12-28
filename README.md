@@ -1,3 +1,8 @@
+### Development
+
+- Run formatter and linter: `npm run lint` or `npm run fix`
+- Run unit tests: `npm run test`
+
 ### Project ideas
 
 - PrefilledBoard (const)
