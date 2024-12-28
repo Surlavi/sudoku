@@ -1,5 +1,6 @@
 ### Development
 
+- Tested with node 22.
 - Run formatter and linter: `npm run lint` or `npm run fix`
 - Run unit tests: `npm run test`
 
