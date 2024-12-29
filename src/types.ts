@@ -70,7 +70,7 @@ class CellValueSet {
   }
 }
 
-export class Coordinate {
+export class Coordinates {
   readonly x: number;
   readonly y: number;
   readonly linearIndex: number;
@@ -85,8 +85,8 @@ export class Coordinate {
     this.squareIndex = Math.floor(x / 3) + Math.floor(y / 3) * 3;
   }
 
-  static fromLinearIndex(i: number): Coordinate {
-    return new Coordinate(i % MAX_NUMBER, Math.floor(i / MAX_NUMBER));
+  static fromLinearIndex(i: number): Coordinates {
+    return new Coordinates(i % MAX_NUMBER, Math.floor(i / MAX_NUMBER));
   }
 
   toString(): string {
@@ -95,10 +95,10 @@ export class Coordinate {
 }
 
 export class Cell {
-  readonly coordinate: Coordinate;
+  readonly coordinate: Coordinates;
   value: number | null;
 
-  constructor(coordinate: Coordinate, value: number | null) {
+  constructor(coordinate: Coordinates, value: number | null) {
     if (value !== null) {
       assertCellValueInRange(value);
     }
@@ -110,7 +110,7 @@ export class Cell {
     return this.value === null ? CHAR_FOR_EMPTY_CELL : this.value.toString();
   }
 
-  static fromChar(coordinate: Coordinate, char: string): Cell {
+  static fromChar(coordinate: Coordinates, char: string): Cell {
     if (char === CHAR_FOR_EMPTY_CELL) {
       return new Cell(coordinate, null);
     }
@@ -153,16 +153,16 @@ export class ResolvingCell extends Cell {
   state: ResolvingCellState;
   readonly possibleValues: CellValueSet;
 
-  static newPrefilled(coordinate: Coordinate, value: number): ResolvingCell {
+  static newPrefilled(coordinate: Coordinates, value: number): ResolvingCell {
     return new ResolvingCell(coordinate, ResolvingCellState.PREFILLED, value);
   }
 
-  static newResolving(coordinate: Coordinate): ResolvingCell {
+  static newResolving(coordinate: Coordinates): ResolvingCell {
     return new ResolvingCell(coordinate, ResolvingCellState.RESOLVING, null);
   }
 
   private constructor(
-    coordinate: Coordinate,
+    coordinate: Coordinates,
     state: ResolvingCellState,
     value: number | null,
   ) {
@@ -216,7 +216,7 @@ export class GenericBoard<T extends Cell> {
 
     const cells = new Array<Cell>();
     for (let i = 0; i < CELLS_NUMBER; i++) {
-      cells.push(Cell.fromChar(Coordinate.fromLinearIndex(i), chars[i]));
+      cells.push(Cell.fromChar(Coordinates.fromLinearIndex(i), chars[i]));
     }
 
     return new GenericBoard(cells);
@@ -233,7 +233,7 @@ export class GenericBoard<T extends Cell> {
     return ret;
   }
 
-  getCellByCoord(coord: Coordinate): T {
+  getCellByCoord(coord: Coordinates): T {
     return this.cells[coord.linearIndex];
   }
 

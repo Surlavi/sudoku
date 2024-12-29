@@ -1,13 +1,13 @@
-import * as types from './types';
+import * as types from './types.js';
 
 import {
   ResolvingCell,
   CELLS_NUMBER,
   MAX_NUMBER,
   ResolvingCellState,
-} from './types';
+} from './types.js';
 
-class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
+export class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
   static createFromBoard(board: Readonly<types.Board>): ResolvingBoard {
     const cells = new Array<ResolvingCell>();
     for (const cell of board.cells) {
@@ -54,7 +54,7 @@ enum ActionType {
 }
 
 interface Action {
-  readonly coordinate: types.Coordinate;
+  readonly coordinate: types.Coordinates;
   readonly type: ActionType;
   readonly value: number;
   readonly reasonString: string | null;
@@ -88,7 +88,7 @@ function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
     }
   };
   for (let i = 0; i < CELLS_NUMBER; i++) {
-    const coord = types.Coordinate.fromLinearIndex(i);
+    const coord = types.Coordinates.fromLinearIndex(i);
     const cell = board.cells[i];
     if (cell.state === ResolvingCellState.RESOLVING) {
       continue;
@@ -137,6 +137,7 @@ function uniqueValueSetter(board: ResolvingBoard): Array<Action> {
 
 export function resolve(board: types.Board) {
   const resolvingBoard = ResolvingBoard.createFromBoard(board);
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const resolvers: Array<PartialResolver> = [
       {resolve: eliminatePossibleStates},
