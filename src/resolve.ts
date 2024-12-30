@@ -32,11 +32,11 @@ export class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
     switch (action.type) {
       case ActionType.REMOVE_DRAFT_NUMBER:
         // console.log(`before ${cell.possibleValues.toString()}`)
-        cell.removePossibleValue(action.value);
+        cell.removeDraftNumber(action.value);
         // console.log(`after ${cell.possibleValues.toString()}`)
         break;
       case ActionType.FILL_IN_NUMBER:
-        cell.resolve(action.value);
+        cell.fillNumber(action.value);
         break;
     }
   }
@@ -77,7 +77,7 @@ function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
   ) {
     if (
       targetCell.state === ResolvingCellState.RESOLVING &&
-      targetCell.possibleValues.has(value)
+      targetCell.draftNumbers.has(value)
     ) {
       ret.push({
         coordinate: targetCell.coordinate,
@@ -126,7 +126,7 @@ function uniqueValueSetter(board: ResolvingBoard): Array<Action> {
     if (cell.state !== ResolvingCellState.RESOLVING) {
       continue;
     }
-    const value = cell.possibleValues.getUnique();
+    const value = cell.draftNumbers.getUnique();
     if (value !== null) {
       addAction(cell, value);
     }

@@ -151,7 +151,7 @@ export enum ResolvingCellState {
 
 export class ResolvingCell extends Cell {
   state: ResolvingCellState;
-  readonly possibleValues: CellValueSet;
+  readonly draftNumbers: CellValueSet;
 
   static newPrefilled(coordinate: Coordinates, value: number): ResolvingCell {
     return new ResolvingCell(coordinate, ResolvingCellState.PREFILLED, value);
@@ -168,28 +168,46 @@ export class ResolvingCell extends Cell {
   ) {
     super(coordinate, value);
     this.state = state;
-    this.possibleValues = new CellValueSet(true);
-    if (state === ResolvingCellState.PREFILLED) {
-      return;
+    this.draftNumbers = new CellValueSet(false);
+  }
+
+  hasNumber(): boolean {
+    switch (this.state) {
+      case ResolvingCellState.PREFILLED:
+      case ResolvingCellState.RESOLVED:
+        return true;
+      case ResolvingCellState.RESOLVING:
+        return false;
     }
+  }
+
+  addAllDraftNumber(): void {
     for (let i = 1; i <= MAX_NUMBER; i++) {
-      this.possibleValues.add(i);
+      this.draftNumbers.add(i);
     }
   }
 
-  removePossibleValue(value: number): void {
-    this.possibleValues.delete(value);
+  hasDraftNumber(value: number): boolean {
+    return this.draftNumbers.has(value);
   }
 
-  resolve(value: number): void {
+  addDraftNumber(value: number): void {
+    this.draftNumbers.add(value);
+  }
+
+  removeDraftNumber(value: number): void {
+    this.draftNumbers.delete(value);
+  }
+
+  fillNumber(value: number): void {
     assertCellValueInRange(value);
     this.value = value;
-    this.possibleValues.clear();
+    this.draftNumbers.clear();
     this.state = ResolvingCellState.RESOLVED;
   }
 
   toString(): string {
-    return `${this.coordinate} state: ${this.state}, possibleValues: ${this.possibleValues}`;
+    return `${this.coordinate} state: ${this.state}, possibleValues: ${this.draftNumbers}`;
   }
 }
 

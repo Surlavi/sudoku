@@ -1,8 +1,9 @@
 import init, * as wasm from '../wasm/pkg/sudoku_wasm.js';
 import {BoardUi, MoveDirection} from './board_ui.js';
-import * as types from './types.js';
 import * as resolve from './resolve.js';
 import {getCurrentTheme} from './theme.js';
+import {GenericBoard} from './types.js';
+import {Game} from './game.js';
 
 const BOARD_EXAMPLE = `
 . . 3 . 2 . 6 . .
@@ -16,6 +17,18 @@ const BOARD_EXAMPLE = `
 . . 5 . 1 . 3 . .
 `;
 
+const ANSWER = `
+4 8 3 9 2 1 6 7 5
+9 6 7 3 4 5 8 2 1
+2 5 1 8 7 6 4 3 9
+5 4 8 1 3 2 9 6 7
+7 3 9 5 6 4 1 8 2
+1 2 6 7 9 8 2 5 4
+3 7 2 6 8 9 5 1 4
+8 1 4 2 5 3 7 6 9
+6 9 5 4 1 7 3 8 2
+`;
+
 function startUi() {
   const appDomNode = document.getElementById('app');
   if (appDomNode === null) {
@@ -25,16 +38,19 @@ function startUi() {
 
   document.body.style.backgroundColor = getCurrentTheme().color_background;
 
-  const board = resolve.ResolvingBoard.createBoardFromString(BOARD_EXAMPLE);
-  const boardUi = new BoardUi(
-    appDomNode,
-    resolve.ResolvingBoard.createFromBoard(board),
-  );
+  const answer = GenericBoard.createBoardFromString(ANSWER);
+  const puzzle = GenericBoard.createBoardFromString(BOARD_EXAMPLE);
+  const game = new Game(answer, puzzle);
+  const boardUi = new BoardUi(appDomNode, game.puzzleBoard);
   boardUi.setSize(800);
 
   window.addEventListener('keydown', (ev: KeyboardEvent) => {
     let direction: MoveDirection | null = null;
-    switch (ev.key) {
+    let value: number | null = null;
+
+    console.log(ev);
+
+    switch (ev.code) {
       case 'ArrowUp':
         direction = MoveDirection.UP;
         break;
@@ -47,6 +63,17 @@ function startUi() {
       case 'ArrowRight':
         direction = MoveDirection.RIGHT;
         break;
+      case 'Digit1':
+      case 'Digit2':
+      case 'Digit3':
+      case 'Digit4':
+      case 'Digit5':
+      case 'Digit6':
+      case 'Digit7':
+      case 'Digit8':
+      case 'Digit9':
+        value = parseInt(ev.code.charAt(5));
+        break;
       default:
         // Do nothing now.
         break;
@@ -54,6 +81,15 @@ function startUi() {
     if (direction !== null) {
       boardUi.moveCursor(direction);
       ev.preventDefault();
+    }
+    if (value !== null && boardUi.cursorCoord !== null) {
+      console.log('hit %d', value);
+      if (ev.shiftKey) {
+        game.fillInNumber(boardUi.cursorCoord, value);
+      } else {
+        game.toggleDraftNumber(boardUi.cursorCoord, value);
+      }
+      boardUi.updateBoard();
     }
   });
 }

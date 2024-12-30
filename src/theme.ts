@@ -8,7 +8,7 @@ export interface Theme {
 }
 
 const DEFAULT_THEME: Theme = {
-  color_prefilled: '#004e61',
+  color_prefilled: '#002e31',
   color_resolved: '#007896',
   color_draft: '#3e909d',
   color_highlight_foreground: '#007896',

@@ -31,7 +31,7 @@ describe('Board test', () => {
     expect(types.printCells(board.getCellsBySquare(6))).toBe('..28....5');
   });
 
-  it('valite', () => {
+  it('validate', () => {
     expect(board.validate(/*strict=*/ false)).toBe(true);
     expect(board.validate(/*strict=*/ true)).toBe(false);
   });

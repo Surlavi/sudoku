@@ -30,6 +30,11 @@ function getCanvas2DContext(
   return canvas.getContext('2d')!;
 }
 
+function clearCanvas(canvas: HTMLCanvasElement) {
+  const ctx = getCanvas2DContext(canvas);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 export enum MoveDirection {
   UP,
   DOWN,
@@ -50,7 +55,7 @@ export class BoardUi {
   // The canvas layer for handling mouse event.
   private clickCanvas!: HTMLCanvasElement;
 
-  private cursorCoord: Coordinates | null = null;
+  cursorCoord: Coordinates | null = null;
 
   constructor(container: HTMLElement, gameBoard: ResolvingBoard) {
     this.container = container;
@@ -203,32 +208,50 @@ export class BoardUi {
       return;
     }
 
-    const drawNumber = (val: number, coord: Coordinates, isDraft: boolean) => {
-      const boxSize = this.getCellSize() / (isDraft ? 3 : 1);
+    clearCanvas(this.numbersCanvas);
+
+    const drawNumber = (
+      val: number,
+      coord: Coordinates,
+      small: boolean,
+      color: string,
+    ) => {
+      const boxSize = this.getCellSize() / (small ? 3 : 1);
       const fontSize = boxSize * 0.8;
       let x = this.getCanvasPosForIdx(coord.x) + boxSize / 2;
       let y = this.getCanvasPosForIdx(coord.y) + boxSize / 2 + fontSize * 0.07;
-      if (isDraft) {
+      if (small) {
         x += Math.floor((val - 1) % 3) * boxSize;
         y += Math.floor((val - 1) / 3) * boxSize;
       }
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `${fontSize}px monospace`;
-      ctx.fillStyle = isDraft
-        ? this.getTheme().color_draft
-        : this.getTheme().color_prefilled;
+      ctx.fillStyle = color;
       ctx.fillText(val.toString(), x, y);
     };
 
     for (const cell of this.gameBoard.cells) {
       if (cell.state === ResolvingCellState.PREFILLED) {
-        drawNumber(cell.value ? cell.value : 0, cell.coordinate, false);
+        drawNumber(
+          cell.value!,
+          cell.coordinate,
+          false,
+          this.getTheme().color_prefilled,
+        );
+      }
+      if (cell.state === ResolvingCellState.RESOLVED) {
+        drawNumber(
+          cell.value!,
+          cell.coordinate,
+          false,
+          this.getTheme().color_resolved,
+        );
       }
       if (cell.state === ResolvingCellState.RESOLVING) {
         for (let i = 1; i <= 9; ++i) {
-          if (cell.possibleValues.has(i)) {
-            drawNumber(i, cell.coordinate, true);
+          if (cell.draftNumbers.has(i)) {
+            drawNumber(i, cell.coordinate, true, this.getTheme().color_draft);
           }
         }
       }
