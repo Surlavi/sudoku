@@ -1,3 +1,4 @@
+use generate::{generate_full, generate_puzzle_from_full};
 use wasm_bindgen::prelude::*;
 
 mod core;
@@ -29,13 +30,9 @@ pub fn fast_resolve(board: &mut [u8]) -> Result<usize, JsError> {
     };
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        // let result = add(2, 2);
-        // assert_eq!(result, 4);
-    }
+#[wasm_bindgen]
+pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) {
+    let answer = generate_full();
+    let puzzle = generate_puzzle_from_full(&answer, non_empty_cnt as usize);
+    fill_color_array_to_js_type(&puzzle, output_puzzle);
 }

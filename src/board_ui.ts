@@ -259,7 +259,10 @@ export class BoardUi {
     const startPos = this.getCanvasPosForIdx(0);
     const endPos = this.getCanvasPosForIdx(9);
     const style: LineStyle = {color: this.getTheme().color_prefilled};
-    const sqrBorderStyle: LineStyle = {color: this.getTheme().color_prefilled, width: 3};
+    const sqrBorderStyle: LineStyle = {
+      color: this.getTheme().color_prefilled,
+      width: 3,
+    };
     for (let i = 0; i <= 9; i++) {
       const pos = this.getCanvasPosForIdx(i);
       drawLine(ctx, startPos, pos, endPos, pos, i % 3 ? style : sqrBorderStyle);

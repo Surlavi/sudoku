@@ -35,10 +35,22 @@ function startUi() {
     return;
   }
 
+  // Create a random game.
+  const puzzleArr = new Uint8Array(81);
+  wasm.generate(25, puzzleArr);
+  const answerArr = new Uint8Array(puzzleArr);
+  wasm.fast_resolve(answerArr);
+
   document.body.style.backgroundColor = getCurrentTheme().color_background;
 
-  const answer = GenericBoard.createBoardFromString(ANSWER);
-  const puzzle = GenericBoard.createBoardFromString(BOARD_EXAMPLE);
+  // const answer = GenericBoard.createBoardFromString(ANSWER);
+  // const puzzle = GenericBoard.createBoardFromString(BOARD_EXAMPLE);
+  const answer = GenericBoard.createBoardFromString(
+    answerArr.join('').replaceAll('0', '.'),
+  );
+  const puzzle = GenericBoard.createBoardFromString(
+    puzzleArr.join('').replaceAll('0', '.'),
+  );
   const game = new Game(answer, puzzle);
   const boardUi = new BoardUi(appDomNode, game.puzzleBoard, {
     size: 800,

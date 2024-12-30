@@ -1,6 +1,4 @@
-use std::ops::ControlFlow;
-
-use rand::{random, seq::SliceRandom, thread_rng, Rng};
+use rand::{seq::SliceRandom, thread_rng};
 
 use crate::*;
 
@@ -64,10 +62,6 @@ pub fn generate_full() -> ColorArray {
     }
 
     return ColorArray::new(*arr);
-}
-
-fn random_node_idx() -> usize {
-    return rand::thread_rng().gen_range(0..81);
 }
 
 const fn create_nodes_array() -> [u8; NODE_COUNT] {
