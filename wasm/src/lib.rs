@@ -1,12 +1,12 @@
-use generate::{generate_full, generate_puzzle_from_full};
+use generator::{generate_full, generate_puzzle_from_full};
 use wasm_bindgen::prelude::*;
 
 mod core;
-mod generate;
-mod solve;
+mod generator;
+mod solver;
 
 use core::*;
-use solve::*;
+use solver::*;
 
 fn new_color_array_from_js_type(src: &[u8]) -> Result<ColorArray, JsError> {
     SudokuArray::try_from(src).map_err(|err| JsError::new(&err.to_string()))
