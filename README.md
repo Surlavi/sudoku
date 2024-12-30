@@ -4,6 +4,9 @@
 - Run formatter and linter: `npm run lint` or `npm run fix`
 - Run unit tests: `npm run test`
 
+#### Perf
+- Example: PERF=/usr/lib/linux-tools/5.4.0-204-generic/perf flamegraph -- target/release/deps/sudoku_wasm-...
+
 ### Project ideas
 
 - PrefilledBoard (const)
