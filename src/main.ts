@@ -54,9 +54,9 @@ function startUi() {
   const game = new Game(answer, puzzle);
   const boardUi = new BoardUi(appDomNode, game.puzzleBoard, {
     size: 800,
-    highlightNeighbors: true,
-    highlightByNumber: true,
-    highlightNeighborsByNumber: true,
+    highlightCursorNeighbors: true,
+    highlightNumber: true,
+    highlightNumberNeighbors: true,
   });
 
   window.addEventListener('keydown', (ev: KeyboardEvent) => {

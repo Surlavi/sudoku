@@ -6,7 +6,6 @@ import {
 } from './types.js';
 import {ResolvingBoard} from './resolve.js';
 import * as theme from './theme.js';
-import * as internal from 'stream';
 
 interface LineStyle {
   color: string;
@@ -52,13 +51,13 @@ export interface Config {
   size: number;
 
   // Highlight the neighbors of the focused cell.
-  highlightNeighbors: boolean;
+  highlightCursorNeighbors: boolean;
 
   // Highlight the cells containing the focused number.
-  highlightByNumber: boolean;
+  highlightNumber: boolean;
 
   // Highlight the all neighbors of the focused number.
-  highlightNeighborsByNumber: boolean;
+  highlightNumberNeighbors: boolean;
 }
 
 export class BoardUi {
@@ -78,6 +77,8 @@ export class BoardUi {
   private clickCanvas!: HTMLCanvasElement;
 
   cursorCoord: Coordinates | null = null;
+
+  focusedNumber: number | null = null;
 
   constructor(
     container: HTMLElement,
@@ -115,6 +116,7 @@ export class BoardUi {
 
   updateBoard(): void {
     this.redrawNumbers();
+    this.redrawHighlight();
   }
 
   updateConfig(config: Config): void {
@@ -143,6 +145,21 @@ export class BoardUi {
         this.updateCursor(null);
       } else {
         this.updateCursor(new Coordinates(x, y));
+      }
+    });
+    this.clickCanvas.addEventListener('dblclick', (ev: MouseEvent) => {
+      const rect = this.clickCanvas.getBoundingClientRect();
+      const x = this.getIdxForCanvasPos(ev.clientX - rect.left);
+      const y = this.getIdxForCanvasPos(ev.clientY - rect.top);
+      // Reset cursor if the click is out of bound.
+      if (x === null || y === null) {
+        this.updateFocusedNumber(null);
+      } else {
+        const cell = this.gameBoard.getCellByCoord(new Coordinates(x, y));
+        // Allow double click to cancel selection.
+        this.updateFocusedNumber(
+          cell.value === this.focusedNumber ? null : cell.value,
+        );
       }
     });
   }
@@ -179,6 +196,12 @@ export class BoardUi {
     }
   }
 
+  updateFocusedNumber(value: number | null) {
+    this.focusedNumber = value;
+    this.redrawHighlight();
+    this.redrawNumbers();
+  }
+
   private createCanvas(zIndex: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = this.config.size;
@@ -206,13 +229,25 @@ export class BoardUi {
       ctx.fillRect(x, y, this.getCellSize(), this.getCellSize());
     };
 
-    const cursor = this.cursorCoord;
-    if (cursor === null) {
-      return;
-    }
-    const focusedNumber = this.gameBoard.getCellByCoord(cursor).value;
+    const highlightDraftCell = (
+      ctx: CanvasRenderingContext2D,
+      coord: Coordinates,
+      value: number,
+      color: string,
+    ) => {
+      const boxSize = this.getCellSize() / 3;
+      const x =
+        this.getCanvasPosForIdx(coord.x) +
+        Math.floor((value - 1) % 3) * boxSize;
+      const y =
+        this.getCanvasPosForIdx(coord.y) +
+        Math.floor((value - 1) / 3) * boxSize;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, boxSize, boxSize);
+    };
 
-    if (this.config.highlightNeighbors) {
+    const cursor = this.cursorCoord;
+    if (cursor && this.config.highlightCursorNeighbors) {
       const ctx = getCanvas2DContext(this.neighHighlightCanvas);
       const cells = this.gameBoard.getCellsByNeighborToCoord(cursor);
       for (const cell of cells) {
@@ -225,15 +260,15 @@ export class BoardUi {
     }
 
     if (
-      focusedNumber !== null &&
-      (this.config.highlightNeighborsByNumber || this.config.highlightByNumber)
+      this.focusedNumber !== null &&
+      (this.config.highlightNumberNeighbors || this.config.highlightNumber)
     ) {
       const ctx = getCanvas2DContext(this.numberHighlightCanvas);
       const numberCells = this.gameBoard.cells.filter((c: Cell) => {
-        return c.value === focusedNumber;
+        return c.value === this.focusedNumber;
       });
       let cells: ReadonlyArray<Cell> = numberCells.slice();
-      if (this.config.highlightNeighborsByNumber) {
+      if (this.config.highlightNumberNeighbors) {
         const cellArrays = numberCells.map((c: Cell) => {
           return this.gameBoard.getCellsByNeighborToCoord(c.coordinate);
         });
@@ -245,6 +280,18 @@ export class BoardUi {
           cell.coordinate,
           this.getTheme().color_highlight_bg2,
         );
+      }
+
+      // Also highlight all draft values.
+      for (const cell of this.gameBoard.cells) {
+        if (cell.hasDraftNumber(this.focusedNumber)) {
+          highlightDraftCell(
+            ctx,
+            cell.coordinate,
+            this.focusedNumber,
+            this.getTheme().color_highlight_bg2,
+          );
+        }
       }
     }
   }
