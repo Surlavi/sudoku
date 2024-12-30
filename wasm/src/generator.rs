@@ -78,7 +78,13 @@ const NODES_ARRAY: [u8; NODE_COUNT] = create_nodes_array();
 
 fn shuffle_nodes() -> [u8; NODE_COUNT] {
     let mut ret = NODES_ARRAY;
-    ret.shuffle(&mut thread_rng());
+
+    // Deterministic behavior in unit tests.
+    #[cfg(not(test))]
+    {
+        ret.shuffle(&mut thread_rng());
+    }
+
     return ret;
 }
 
@@ -110,7 +116,7 @@ fn nodes_sorted_by_colors_num(arr: &ColorArray) -> Vec<u8> {
     }
 
     let nodes_to_try = shuffle_nodes();
-     // Try sort the nodes by the number of 0 value it connects to.
+    // Try sort the nodes by the number of 0 value it connects to.
     let mut pairs = nodes_to_try
         .iter()
         .filter(|&&i| arr[i as usize] != 0)
@@ -180,7 +186,7 @@ pub fn generate_puzzle_from_full(arr: &ColorArray, target_non_empty: usize) -> C
         target_non_empty,
         &[false; NODE_COUNT],
     );
-    match fast_solve_impl(&puzzle) {
+    match fast_solve(&puzzle) {
         SolveResult::Unique(answer) => {
             if answer != *arr {
                 panic!("Invalid state");
@@ -198,12 +204,18 @@ mod tests {
     #[test]
     fn test_generate_full() {
         // Only trigger the generation. It will validate itself.
-        generate_full();
+        let arr = generate_full();
+        print!("{}", print_sudoku_array(&arr, u8::to_string));
     }
 
     #[test]
     fn test_generate_puzzle_from_full() {
-        let arr = generate_full();
+        let arr = SudokuArray::new([
+            5, 3, 9, 4, 8, 2, 6, 1, 7, 8, 6, 4, 9, 7, 1, 5, 2, 3, 7, 1, 2, 5, 3, 6, 4, 9, 8, 2, 5,
+            6, 7, 4, 3, 9, 8, 1, 1, 4, 3, 8, 2, 9, 7, 5, 6, 9, 8, 7, 1, 6, 5, 3, 4, 2, 4, 7, 1, 6,
+            9, 8, 2, 3, 5, 6, 2, 5, 3, 1, 4, 8, 7, 9, 3, 9, 8, 2, 5, 7, 1, 6, 4,
+        ]);
+
         // 23~24 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
         let puzzle = generate_puzzle_from_full(&arr, 22);
         print!("{}", print_sudoku_array(&puzzle, u8::to_string));

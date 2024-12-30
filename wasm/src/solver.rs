@@ -6,33 +6,43 @@ use std::{
 
 use crate::*;
 
-struct Colors([bool; COLOR_COUNT + 1]);
+#[derive(Clone, Copy)]
+struct Colors{
+    arr: [bool; COLOR_COUNT + 1],
+    // cnt is a bottleneck, so cache the value instead.
+    cnt: usize,
+}
 
 impl Colors {
     fn new(val: bool) -> Self {
-        return Self([val; COLOR_COUNT + 1]);
+        return Colors{
+            arr: [val; COLOR_COUNT + 1], 
+            cnt: if val {COLOR_COUNT} else {0},
+        };
     }
 
     fn set(&mut self, color: u8) {
-        self.0[color as usize] = true;
+        if !self.arr[color as usize] {self.cnt += 1}
+        self.arr[color as usize] = true;
     }
 
     fn del(&mut self, color: u8) {
-        self.0[color as usize] = false;
+        if self.arr[color as usize] {self.cnt -= 1}
+        self.arr[color as usize] = false;
     }
 
     fn has(&self, color: u8) -> bool {
-        return self.0[color as usize];
+        return self.arr[color as usize];
     }
 
     fn count(&self) -> usize {
-        return self.0[1..].iter().filter(|&&x| x).count();
+        return self.cnt;
     }
 
     fn get_unique(&self) -> Option<u8> {
         let mut ret = None;
         for i in 1..COLOR_COUNT + 1 {
-            if !self.0[i] {
+            if !self.arr[i] {
                 continue;
             }
             match ret {
@@ -46,7 +56,7 @@ impl Colors {
     fn get_all(&self) -> Vec<u8> {
         let mut ret = vec![];
         for i in 1..COLOR_COUNT + 1 {
-            if self.0[i] {
+            if self.arr[i] {
                 ret.push(i as u8);
             }
         }
@@ -65,6 +75,7 @@ impl Debug for Colors {
     }
 }
 
+#[derive(Clone, Copy)]
 struct Node {
     color: u8,
     available_colors: Colors,
@@ -79,6 +90,7 @@ impl Node {
     }
 }
 
+#[derive(Clone, Copy)]
 struct NodeArray(SudokuArray<Node>);
 
 impl Deref for NodeArray {
@@ -124,6 +136,7 @@ impl NodeArray {
     }
 
     // Returns the impossible node after the elimination.
+    #[inline(never)]
     fn eliminate_with_idx(&mut self, idx: NodeIndexType) -> Option<NodeIndexType> {
         let node = &self[idx];
         if node.color == 0 {
@@ -145,12 +158,14 @@ impl NodeArray {
         return None;
     }
 
+    #[inline(never)]
     fn eliminate(&mut self) {
         for i in 0..self.len() {
             self.eliminate_with_idx(i);
         }
     }
 
+    #[inline(never)]
     fn fill(&mut self) -> FillResult {
         let mut cnt = 0;
         for i in 0..self.len() {
@@ -172,6 +187,7 @@ impl NodeArray {
         return FillResult::Success(cnt);
     }
 
+    #[inline(never)]
     fn find_invalid_cell(&self) -> Option<NodeIndexType> {
         for i in 0..NODE_COUNT {
             for j in NEIGHBOR_ARRAY_MAP[i] {
@@ -187,8 +203,7 @@ impl NodeArray {
     }
 
     // Returns the number of remaining nodes to be colored, or None if the graph cannot be colored.
-    fn eliminate_and_fill(&mut self) -> Option<usize> {
-        self.eliminate();
+    fn fill_eliminate_loop(&mut self) -> Option<usize> {
         loop {
             match self.fill() {
                 FillResult::Success(0) => return Some(self.uncolored_node_count()),
@@ -199,6 +214,7 @@ impl NodeArray {
     }
 
     // Returns the index of an uncolored node for backtracing.
+    #[inline(never)]
     fn pick_up_uncolored_node(&self) -> Option<NodeIndexType> {
         let mut pairs = (0..NODE_COUNT)
             .filter(|i| self[*i].color == 0)
@@ -224,19 +240,25 @@ pub enum SolveResult {
     Timeout,
 }
 
-pub fn fast_solve_impl(puzzle: &ColorArray) -> SolveResult {
+pub fn fast_solve(puzzle: &ColorArray) -> SolveResult {
     return fast_solve_with_hint(puzzle, None);
 }
 
 pub fn fast_solve_with_hint(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
-    let mut node_arr = NodeArray::from(puzzle);
+    let mut node_arr: NodeArray = NodeArray::from(puzzle);
+    node_arr.eliminate();
+    return fast_solve_impl(node_arr, hint_answer);
+}
 
+fn fast_solve_impl(
+    mut node_arr: NodeArray,
+    hint_answer: Option<&ColorArray>,
+) -> SolveResult {
     if let Some(_) = node_arr.find_invalid_cell() {
         return SolveResult::Invalid;
     }
 
-    node_arr.eliminate();
-    match node_arr.eliminate_and_fill() {
+    match node_arr.fill_eliminate_loop() {
         // No uncolored node. All work done.
         Some(0) => {
             // print!("Found an answer\n");
@@ -254,10 +276,11 @@ pub fn fast_solve_with_hint(puzzle: &ColorArray, hint_answer: Option<&ColorArray
             let idx = node_arr.pick_up_uncolored_node().expect("Invalid state");
             let mut answers = vec![];
             let colors = node_arr[idx].available_colors.get_all();
-            let mut copied_color_arr: ColorArray = (&node_arr).into();
             for c in colors {
-                copied_color_arr[idx] = c;
-                match fast_solve_with_hint(&copied_color_arr, hint_answer) {
+                let mut node_arr_copy = node_arr;
+                node_arr_copy[idx].color = c;
+                node_arr_copy.eliminate_with_idx(idx);
+                match fast_solve_impl(node_arr_copy, hint_answer) {
                     SolveResult::Invalid => continue,
                     SolveResult::Unique(answer) => {
                         answers.push(answer);
@@ -312,7 +335,7 @@ mod tests {
             6, 9, 5, 4, 1, 7, 3, 8, 2, //
         ];
 
-        let result = fast_solve_impl(&ColorArray::new(puzzle));
+        let result = fast_solve(&ColorArray::new(puzzle));
         assert_eq!(result, SolveResult::Unique(ColorArray::new(answer)));
     }
 
@@ -341,7 +364,7 @@ mod tests {
             9, 2, 7, 3, 4, 5, 1, 8, 6, //
         ];
 
-        let result = fast_solve_impl(&ColorArray::new(puzzle));
+        let result = fast_solve(&ColorArray::new(puzzle));
         assert_eq!(result, SolveResult::Unique(ColorArray::new(answer)));
     }
 }
