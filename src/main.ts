@@ -1,7 +1,8 @@
 import init, * as wasm from '../wasm/pkg/sudoku_wasm.js';
-import {BoardUi} from './board_ui.js';
+import {BoardUi, MoveDirection} from './board_ui.js';
 import * as types from './types.js';
 import * as resolve from './resolve.js';
+import {getCurrentTheme} from './theme.js';
 
 const BOARD_EXAMPLE = `
 . . 3 . 2 . 6 . .
@@ -22,12 +23,39 @@ function startUi() {
     return;
   }
 
+  document.body.style.backgroundColor = getCurrentTheme().color_background;
+
   const board = resolve.ResolvingBoard.createBoardFromString(BOARD_EXAMPLE);
   const boardUi = new BoardUi(
     appDomNode,
     resolve.ResolvingBoard.createFromBoard(board),
   );
   boardUi.setSize(800);
+
+  window.addEventListener('keydown', (ev: KeyboardEvent) => {
+    let direction: MoveDirection | null = null;
+    switch (ev.key) {
+      case 'ArrowUp':
+        direction = MoveDirection.UP;
+        break;
+      case 'ArrowDown':
+        direction = MoveDirection.DOWN;
+        break;
+      case 'ArrowLeft':
+        direction = MoveDirection.LEFT;
+        break;
+      case 'ArrowRight':
+        direction = MoveDirection.RIGHT;
+        break;
+      default:
+        // Do nothing now.
+        break;
+    }
+    if (direction !== null) {
+      boardUi.moveCursor(direction);
+      ev.preventDefault();
+    }
+  });
 }
 
 async function main() {
