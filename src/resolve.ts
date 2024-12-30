@@ -68,7 +68,7 @@ interface PartialResolver {
   resolve(board: ResolvingBoard): Array<Action>;
 }
 
-function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
+export function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
   const ret = new Array<Action>();
   const addAction = function (
     targetCell: ResolvingCell,

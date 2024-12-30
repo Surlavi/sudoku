@@ -1,5 +1,5 @@
 import {Board, Coordinates} from './types.js';
-import {ResolvingBoard} from './resolve.js';
+import {eliminatePossibleStates, ResolvingBoard} from './resolve.js';
 
 // Game contains the logic related to one round of game. It's supposed to be independent of UI.
 export class Game {
@@ -39,5 +39,15 @@ export class Game {
     } else {
       cell.addDraftNumber(value);
     }
+  }
+
+  recalculateDraftNumbers() {
+    for (const cell of this.puzzleBoard.cells) {
+      if (!cell.hasNumber()) {
+        cell.addAllDraftNumber();
+      }
+    }
+    const actions = eliminatePossibleStates(this.puzzleBoard);
+    this.puzzleBoard.takeActions(actions);
   }
 }

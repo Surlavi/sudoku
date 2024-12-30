@@ -89,6 +89,10 @@ function startUi() {
       case 'Digit9':
         value = parseInt(ev.code.charAt(5));
         break;
+      case 'KeyD':
+        game.recalculateDraftNumbers();
+        boardUi.updateBoard();
+        break;
       default:
         // Do nothing now.
         break;
