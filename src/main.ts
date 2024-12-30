@@ -1,6 +1,5 @@
 import init, * as wasm from '../wasm/pkg/sudoku_wasm.js';
-import {BoardUi, MoveDirection} from './board_ui.js';
-import * as resolve from './resolve.js';
+import {BoardUi, Config, MoveDirection} from './board_ui.js';
 import {getCurrentTheme} from './theme.js';
 import {GenericBoard} from './types.js';
 import {Game} from './game.js';
@@ -41,8 +40,12 @@ function startUi() {
   const answer = GenericBoard.createBoardFromString(ANSWER);
   const puzzle = GenericBoard.createBoardFromString(BOARD_EXAMPLE);
   const game = new Game(answer, puzzle);
-  const boardUi = new BoardUi(appDomNode, game.puzzleBoard);
-  boardUi.setSize(800);
+  const boardUi = new BoardUi(appDomNode, game.puzzleBoard, {
+    size: 800,
+    highlightNeighbors: true,
+    highlightByNumber: true,
+    highlightNeighborsByNumber: true,
+  });
 
   window.addEventListener('keydown', (ev: KeyboardEvent) => {
     let direction: MoveDirection | null = null;

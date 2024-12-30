@@ -42,8 +42,22 @@ export enum MoveDirection {
   LEFT,
 }
 
+export interface Config {
+  // Size of the canvas.
+  size: number;
+
+  // Highlight the neighbors of the focused cell.
+  highlightNeighbors: boolean;
+
+  // Highlight the cells containing the focused number.
+  highlightByNumber: boolean;
+
+  // Highlight the all neighbors of the focused number.
+  highlightNeighborsByNumber: boolean;
+}
+
 export class BoardUi {
-  private size = 0;
+  private config!: Config;
   private readonly container: HTMLElement;
 
   private gameBoard: ResolvingBoard;
@@ -57,24 +71,29 @@ export class BoardUi {
 
   cursorCoord: Coordinates | null = null;
 
-  constructor(container: HTMLElement, gameBoard: ResolvingBoard) {
+  constructor(
+    container: HTMLElement,
+    gameBoard: ResolvingBoard,
+    config: Config,
+  ) {
     this.container = container;
     this.gameBoard = gameBoard;
+    this.updateConfig(config);
   }
 
-  getTheme(): theme.Theme {
+  private getTheme(): theme.Theme {
     return theme.getCurrentTheme();
   }
 
-  getCellSize(): number {
-    return this.size / 11;
+  private getCellSize(): number {
+    return this.config.size / 11;
   }
 
-  getCanvasPosForIdx(index: number): number {
+  private getCanvasPosForIdx(index: number): number {
     return this.getCellSize() * (index + 1);
   }
 
-  getIdxForCanvasPos(pos: number): number | null {
+  private getIdxForCanvasPos(pos: number): number | null {
     for (let i = 0; i < 9; ++i) {
       if (
         pos < this.getCanvasPosForIdx(i + 1) &&
@@ -90,8 +109,8 @@ export class BoardUi {
     this.redrawNumbers();
   }
 
-  setSize(size: number): void {
-    this.size = size;
+  updateConfig(config: Config): void {
+    this.config = config;
 
     // Remove all children at first.
     while (this.container.firstChild) {
@@ -151,8 +170,8 @@ export class BoardUi {
 
   private createCanvas(zIndex: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
-    canvas.width = this.size;
-    canvas.height = this.size;
+    canvas.width = this.config.size;
+    canvas.height = this.config.size;
     canvas.style.position = 'absolute';
     canvas.style.left = '0';
     canvas.style.top = '0';
