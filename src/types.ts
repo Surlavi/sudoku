@@ -280,6 +280,14 @@ export class GenericBoard<T extends Cell> {
     );
   }
 
+  getCellsByNeighborToCoord(coord: Coordinates): ReadonlyArray<T> {
+    return mergeCellLists([
+      this.getCellsByColumn(coord.x),
+      this.getCellsByRow(coord.y),
+      this.getCellsBySquare(coord.squareIndex),
+    ]);
+  }
+
   validate(strict: boolean): boolean {
     for (let i = 0; i < MAX_NUMBER; i++) {
       if (!validateCells(this.getCellsByRow(i), strict)) return false;
@@ -288,6 +296,28 @@ export class GenericBoard<T extends Cell> {
     }
     return true;
   }
+}
+
+export function mergeCellLists<T extends Cell>(
+  arrays: ReadonlyArray<ReadonlyArray<T>>,
+): ReadonlyArray<T> {
+  const seen = new Set<Cell>();
+  const merged: T[] = [];
+
+  for (const arr of arrays) {
+    if (arr) {
+      for (const cell of arr) {
+        if (cell) {
+          if (!seen.has(cell)) {
+            seen.add(cell);
+            merged.push(cell);
+          }
+        }
+      }
+    }
+  }
+
+  return merged;
 }
 
 export type Board = GenericBoard<Cell>;

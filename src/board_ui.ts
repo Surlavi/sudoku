@@ -1,4 +1,9 @@
-import {Coordinates, ResolvingCellState} from './types.js';
+import {
+  Cell,
+  Coordinates,
+  mergeCellLists,
+  ResolvingCellState,
+} from './types.js';
 import {ResolvingBoard} from './resolve.js';
 import * as theme from './theme.js';
 import * as internal from 'stream';
@@ -63,6 +68,9 @@ export class BoardUi {
   private gameBoard: ResolvingBoard;
 
   private gridCanvas!: HTMLCanvasElement;
+  private neighHighlightCanvas!: HTMLCanvasElement;
+  private numberHighlightCanvas!: HTMLCanvasElement;
+  // The canvas layer for displaying numbers.
   private numbersCanvas!: HTMLCanvasElement;
   // The canvas layer for displaying cursor.
   private cursorCanvas!: HTMLCanvasElement;
@@ -117,10 +125,12 @@ export class BoardUi {
       this.container.removeChild(this.container.firstChild);
     }
 
-    this.gridCanvas = this.createCanvas(1);
-    this.numbersCanvas = this.createCanvas(2);
-    this.cursorCanvas = this.createCanvas(3);
-    this.clickCanvas = this.createCanvas(4);
+    this.numberHighlightCanvas = this.createCanvas(1);
+    this.neighHighlightCanvas = this.createCanvas(2);
+    this.gridCanvas = this.createCanvas(3);
+    this.numbersCanvas = this.createCanvas(4);
+    this.cursorCanvas = this.createCanvas(5);
+    this.clickCanvas = this.createCanvas(6);
 
     this.redrawGrid();
     this.redrawNumbers();
@@ -130,19 +140,20 @@ export class BoardUi {
       const y = this.getIdxForCanvasPos(ev.clientY - rect.top);
       // Reset cursor if the click is out of bound.
       if (x === null || y === null) {
-        this.setCursor(null);
+        this.updateCursor(null);
       } else {
-        this.setCursor(new Coordinates(x, y));
+        this.updateCursor(new Coordinates(x, y));
       }
     });
   }
 
-  setCursor(coord: Coordinates | null): void {
+  updateCursor(coord: Coordinates | null): void {
     console.log('Set cursor to %s', coord);
 
     // TODO: If the pos did not change, we can skip the following logic.
     this.cursorCoord = coord;
     this.redrawCursor();
+    this.redrawHighlight();
   }
 
   moveCursor(d: MoveDirection) {
@@ -164,7 +175,7 @@ export class BoardUi {
         break;
     }
     if (x < 9 && x >= 0 && y < 9 && y >= 0) {
-      this.setCursor(new Coordinates(x, y));
+      this.updateCursor(new Coordinates(x, y));
     }
   }
 
@@ -178,6 +189,64 @@ export class BoardUi {
     canvas.style.zIndex = `${zIndex}`;
     this.container.appendChild(canvas);
     return canvas;
+  }
+
+  private redrawHighlight(): void {
+    clearCanvas(this.neighHighlightCanvas);
+    clearCanvas(this.numberHighlightCanvas);
+
+    const highlightCell = (
+      ctx: CanvasRenderingContext2D,
+      coord: Coordinates,
+      color: string,
+    ) => {
+      const x = this.getCanvasPosForIdx(coord.x);
+      const y = this.getCanvasPosForIdx(coord.y);
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, this.getCellSize(), this.getCellSize());
+    };
+
+    const cursor = this.cursorCoord;
+    if (cursor === null) {
+      return;
+    }
+    const focusedNumber = this.gameBoard.getCellByCoord(cursor).value;
+
+    if (this.config.highlightNeighbors) {
+      const ctx = getCanvas2DContext(this.neighHighlightCanvas);
+      const cells = this.gameBoard.getCellsByNeighborToCoord(cursor);
+      for (const cell of cells) {
+        highlightCell(
+          ctx,
+          cell.coordinate,
+          this.getTheme().color_highlight_bg1,
+        );
+      }
+    }
+
+    if (
+      focusedNumber !== null &&
+      (this.config.highlightNeighborsByNumber || this.config.highlightByNumber)
+    ) {
+      const ctx = getCanvas2DContext(this.numberHighlightCanvas);
+      const numberCells = this.gameBoard.cells.filter((c: Cell) => {
+        return c.value === focusedNumber;
+      });
+      let cells: ReadonlyArray<Cell> = numberCells.slice();
+      if (this.config.highlightNeighborsByNumber) {
+        const cellArrays = numberCells.map((c: Cell) => {
+          return this.gameBoard.getCellsByNeighborToCoord(c.coordinate);
+        });
+        cells = mergeCellLists(cellArrays);
+      }
+      for (const cell of cells) {
+        highlightCell(
+          ctx,
+          cell.coordinate,
+          this.getTheme().color_highlight_bg2,
+        );
+      }
+    }
   }
 
   private redrawGrid(): void {
