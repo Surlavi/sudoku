@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 mod core;
+mod generate;
 mod solve;
 
 use core::*;

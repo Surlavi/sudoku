@@ -235,7 +235,7 @@ pub fn fast_solve_impl(color_arr: &ColorArray) -> SolveResult {
         match node_arr.eliminate_and_fill() {
             // No uncolored node. All work done.
             Some(0) => {
-                print!("Found an answer\n");
+                // print!("Found an answer\n");
                 return SolveResult::Unique((&node_arr).into());
             }
             // Unable to color the graph. The input is invalid.
