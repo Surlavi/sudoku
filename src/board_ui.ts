@@ -87,7 +87,7 @@ export class BoardUi {
   }
 
   updateBoard(): void {
-    this.drawNumbers();
+    this.redrawNumbers();
   }
 
   setSize(size: number): void {
@@ -103,8 +103,8 @@ export class BoardUi {
     this.cursorCanvas = this.createCanvas(3);
     this.clickCanvas = this.createCanvas(4);
 
-    this.drawGrid();
-    this.drawNumbers();
+    this.redrawGrid();
+    this.redrawNumbers();
     this.clickCanvas.addEventListener('click', (ev: MouseEvent) => {
       const rect = this.clickCanvas.getBoundingClientRect();
       const x = this.getIdxForCanvasPos(ev.clientX - rect.left);
@@ -123,26 +123,7 @@ export class BoardUi {
 
     // TODO: If the pos did not change, we can skip the following logic.
     this.cursorCoord = coord;
-    const ctx = getCanvas2DContext(this.cursorCanvas);
-
-    // Clear the current drawing at first.
-    ctx.clearRect(0, 0, this.cursorCanvas.width, this.cursorCanvas.height);
-
-    if (coord === null) return;
-
-    // Redraw cursor box.
-    const x1 = this.getCanvasPosForIdx(coord.x);
-    const x2 = this.getCanvasPosForIdx(coord.x + 1);
-    const y1 = this.getCanvasPosForIdx(coord.y);
-    const y2 = this.getCanvasPosForIdx(coord.y + 1);
-    const style: LineStyle = {
-      color: this.getTheme().color_highlight_foreground,
-      width: 3,
-    };
-    drawLine(ctx, x1, y1, x2, y1, style);
-    drawLine(ctx, x1, y2, x2, y2, style);
-    drawLine(ctx, x1, y1, x1, y2, style);
-    drawLine(ctx, x2, y1, x2, y2, style);
+    this.redrawCursor();
   }
 
   moveCursor(d: MoveDirection) {
@@ -180,7 +161,7 @@ export class BoardUi {
     return canvas;
   }
 
-  private drawGrid(): void {
+  private redrawGrid(): void {
     const ctx = this.gridCanvas.getContext('2d');
     if (!ctx) {
       console.error('Context not available');
@@ -197,7 +178,7 @@ export class BoardUi {
     }
   }
 
-  private drawNumbers(): void {
+  private redrawNumbers(): void {
     if (!this.gameBoard) {
       return;
     }
@@ -256,5 +237,30 @@ export class BoardUi {
         }
       }
     }
+  }
+
+  private redrawCursor(): void {
+    const ctx = getCanvas2DContext(this.cursorCanvas);
+
+    // Clear the current drawing at first.
+    clearCanvas(this.cursorCanvas);
+
+    const coord = this.cursorCoord;
+
+    if (coord === null) return;
+
+    // Redraw cursor box.
+    const x1 = this.getCanvasPosForIdx(coord.x);
+    const x2 = this.getCanvasPosForIdx(coord.x + 1);
+    const y1 = this.getCanvasPosForIdx(coord.y);
+    const y2 = this.getCanvasPosForIdx(coord.y + 1);
+    const style: LineStyle = {
+      color: this.getTheme().color_highlight_foreground,
+      width: 3,
+    };
+    drawLine(ctx, x1, y1, x2, y1, style);
+    drawLine(ctx, x1, y2, x2, y2, style);
+    drawLine(ctx, x1, y1, x1, y2, style);
+    drawLine(ctx, x2, y1, x2, y2, style);
   }
 }
