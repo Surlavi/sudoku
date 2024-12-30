@@ -9,7 +9,7 @@ pub const NODE_COUNT: usize = COLOR_COUNT * COLOR_COUNT;
 // Number of neighbors per node (8 + 8 + 4).
 const NEIGHBOR_COUNT: usize = 20;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct SudokuArray<T>([T; NODE_COUNT]);
 
 impl<T> SudokuArray<T> {

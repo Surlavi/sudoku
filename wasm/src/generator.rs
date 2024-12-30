@@ -54,7 +54,7 @@ pub fn generate_full() -> ColorArray {
     // Generate the first row directly.
     arr[..9].copy_from_slice(&shuffle_colors());
     generate_full_impl(&mut arr, COLOR_COUNT);
-    if (!validate(&arr)) {
+    if !validate(&arr) {
         panic!(
             "Failed to generate full array: {}",
             print_sudoku_array(&arr, u8::to_string)
@@ -82,16 +82,54 @@ fn shuffle_nodes() -> [u8; NODE_COUNT] {
     return ret;
 }
 
+fn nodes_sorted_by_connected_zeros(arr: &ColorArray) -> Vec<u8> {
+    let nodes_to_try = shuffle_nodes();
+    let count_zero_in_neighs = |i: u8| {
+        let mut cnt = 0;
+        for j in NEIGHBOR_ARRAY_MAP[i as usize] {
+            if arr[j] == 0 {
+                cnt += 1;
+            }
+        }
+        return cnt;
+    };
+    // Try sort the nodes by the number of 0 value it connects to.
+    let mut pairs = nodes_to_try
+        .iter()
+        .filter(|&&i| arr[i as usize] != 0)
+        .map(|&i| (i, count_zero_in_neighs(i)))
+        .collect::<Vec<_>>();
+    pairs.sort_by_key(|x| x.1);
+    return pairs.iter().map(|x| x.0).collect();
+}
+
+fn nodes_sorted_by_colors_num(arr: &ColorArray) -> Vec<u8> {
+    let mut colors = [0; COLOR_COUNT + 1];
+    for i in 0..arr.len() {
+        colors[arr[i] as usize] += 1;
+    }
+
+    let nodes_to_try = shuffle_nodes();
+     // Try sort the nodes by the number of 0 value it connects to.
+    let mut pairs = nodes_to_try
+        .iter()
+        .filter(|&&i| arr[i as usize] != 0)
+        .map(|&i| (i, colors[arr[i as usize] as usize]))
+        .collect::<Vec<_>>();
+    pairs.sort_by_key(|x| x.1);
+    return pairs.iter().map(|x| x.0).collect();
+}
+
 fn generate_puzzle_from_full_impl(
+    answer: &ColorArray,
     arr: &mut ColorArray,
     current_non_empty: usize,
     target_non_empty: usize,
     cannot_remove: &[bool; NODE_COUNT],
 ) -> bool {
-    match fast_solve_impl(&arr) {
+    match fast_solve_with_hint(&arr, Some(&answer)) {
         SolveResult::Invalid => panic!("Got an invalid array"),
         SolveResult::Multiple(_) => {
-            print!("Not unique: {}\n", current_non_empty);
             return false;
         }
         SolveResult::Timeout => todo!(),
@@ -105,7 +143,7 @@ fn generate_puzzle_from_full_impl(
     }
 
     let mut cannot_remove_copy = cannot_remove.clone();
-    for i in shuffle_nodes() {
+    for i in nodes_sorted_by_connected_zeros(&arr) {
         if cannot_remove[i as usize] {
             continue;
         }
@@ -114,12 +152,13 @@ fn generate_puzzle_from_full_impl(
         }
         let val = arr[i as usize];
         arr[i as usize] = 0;
-        if (generate_puzzle_from_full_impl(
+        if generate_puzzle_from_full_impl(
+            answer,
             arr,
             current_non_empty - 1,
             target_non_empty,
             &cannot_remove_copy,
-        )) {
+        ) {
             return true;
         }
         arr[i as usize] = val;
@@ -135,12 +174,13 @@ fn generate_puzzle_from_full_impl(
 pub fn generate_puzzle_from_full(arr: &ColorArray, target_non_empty: usize) -> ColorArray {
     let mut puzzle = ColorArray::new(**arr);
     generate_puzzle_from_full_impl(
+        arr,
         &mut puzzle,
         NODE_COUNT,
         target_non_empty,
         &[false; NODE_COUNT],
     );
-    match (fast_solve_impl(&puzzle)) {
+    match fast_solve_impl(&puzzle) {
         SolveResult::Unique(answer) => {
             if answer != *arr {
                 panic!("Invalid state");
@@ -164,8 +204,8 @@ mod tests {
     #[test]
     fn test_generate_puzzle_from_full() {
         let arr = generate_full();
-        // 25 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-        let puzzle = generate_puzzle_from_full(&arr, 25);
+        // 23~24 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
+        let puzzle = generate_puzzle_from_full(&arr, 22);
         print!("{}", print_sudoku_array(&puzzle, u8::to_string));
     }
 }

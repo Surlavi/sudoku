@@ -1,5 +1,6 @@
 use std::{
     fmt::Debug,
+    hint,
     ops::{Deref, DerefMut},
 };
 
@@ -185,7 +186,7 @@ impl NodeArray {
         None
     }
 
-    // Returns the number of remaining nodes to be colored, or None the graph cannot be colored.
+    // Returns the number of remaining nodes to be colored, or None if the graph cannot be colored.
     fn eliminate_and_fill(&mut self) -> Option<usize> {
         self.eliminate();
         loop {
@@ -223,55 +224,61 @@ pub enum SolveResult {
     Timeout,
 }
 
-pub fn fast_solve_impl(color_arr: &ColorArray) -> SolveResult {
-    let mut node_arr = NodeArray::from(color_arr);
+pub fn fast_solve_impl(puzzle: &ColorArray) -> SolveResult {
+    return fast_solve_with_hint(puzzle, None);
+}
+
+pub fn fast_solve_with_hint(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
+    let mut node_arr = NodeArray::from(puzzle);
 
     if let Some(_) = node_arr.find_invalid_cell() {
         return SolveResult::Invalid;
     }
 
     node_arr.eliminate();
-    loop {
-        match node_arr.eliminate_and_fill() {
-            // No uncolored node. All work done.
-            Some(0) => {
-                // print!("Found an answer\n");
-                return SolveResult::Unique((&node_arr).into());
+    match node_arr.eliminate_and_fill() {
+        // No uncolored node. All work done.
+        Some(0) => {
+            // print!("Found an answer\n");
+            let answer: ColorArray = (&node_arr).into();
+            if hint_answer.is_some_and(|x| *x != answer) {
+                return SolveResult::Multiple(vec![*hint_answer.expect(""), answer]);
             }
-            // Unable to color the graph. The input is invalid.
-            None => return SolveResult::Invalid,
-            // Unable to solve the puzzle with the simple strategy. Try backtracking then.
-            Some(remaining_cnt) => {
-                // print!("Remaining {}\n", remaining_cnt);
-                let idx = node_arr.pick_up_uncolored_node().expect("Invalid state");
-                let mut answers = vec![];
-                let colors = node_arr[idx].available_colors.get_all();
-                let mut copied_color_arr: ColorArray = (&node_arr).into();
-                for c in colors.iter() {
-                    copied_color_arr[idx] = *c;
-                    match (fast_solve_impl(&copied_color_arr)) {
-                        SolveResult::Invalid => continue,
-                        SolveResult::Unique(answer) => {
-                            answers.push(answer);
-                        }
-                        SolveResult::Multiple(new_answers) => {
-                            answers.extend(new_answers);
-                        }
-                        SolveResult::Timeout => return SolveResult::Timeout,
+            return SolveResult::Unique((&node_arr).into());
+        }
+        // Unable to color the graph. The input is invalid.
+        None => return SolveResult::Invalid,
+        // Unable to solve the puzzle with the simple strategy. Try backtracking then.
+        Some(_) => {
+            // print!("Remaining {}\n", remaining_cnt);
+            let idx = node_arr.pick_up_uncolored_node().expect("Invalid state");
+            let mut answers = vec![];
+            let colors = node_arr[idx].available_colors.get_all();
+            let mut copied_color_arr: ColorArray = (&node_arr).into();
+            for c in colors {
+                copied_color_arr[idx] = c;
+                match fast_solve_with_hint(&copied_color_arr, hint_answer) {
+                    SolveResult::Invalid => continue,
+                    SolveResult::Unique(answer) => {
+                        answers.push(answer);
                     }
-
-                    // Now that we already have multiple answers, just return them. By definition, this function does not have to return all the valid answers.
-                    if answers.len() > 1 {
-                        return SolveResult::Multiple(answers);
+                    SolveResult::Multiple(new_answers) => {
+                        answers.extend(new_answers);
                     }
+                    SolveResult::Timeout => return SolveResult::Timeout,
                 }
-                return match answers.len() {
-                    0 => SolveResult::Invalid,
-                    1 => SolveResult::Unique(SudokuArray::new(*answers[0])),
-                    // Already handled above in the loop.
-                    _ => panic!("Unexpected multiple answer found"),
-                };
+
+                // Now that we already have multiple answers, just return them. By definition, this function does not have to return all the valid answers.
+                if answers.len() > 1 {
+                    return SolveResult::Multiple(answers);
+                }
             }
+            return match answers.len() {
+                0 => SolveResult::Invalid,
+                1 => SolveResult::Unique(SudokuArray::new(*answers[0])),
+                // Already handled above in the loop.
+                _ => panic!("Unexpected multiple answer found"),
+            };
         }
     }
 }
