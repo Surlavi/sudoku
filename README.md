@@ -1,34 +1,27 @@
 ### Development
 
-- Tested with node 22.
-- Run formatter and linter: `npm run lint` or `npm run fix`
-- Run unit tests: `npm run test`
+- Environment
+  - Tested with
+    - nodejs v21.7.3;
+    - Rust 1.83.0.
+  - `npm install`
+- Build
+  - `sh build.sh`
+- Run unit tests
+  - `npm run test`
+  - `cargo test --release`
+- Benchmark unit tests in rust:
+  - Example on wsl: `PERF=/usr/lib/linux-tools/5.4.0-204-generic/perf flamegraph -- target/release/deps/sudoku_wasm-...`
+- Format code
+  - `npm run fix`
+  - `cargo fmt` && `cargo clippy`
+- Publish demo to GitHub Pages:
+  - `sh publish.sh`
 
-#### Perf
-- Example: PERF=/usr/lib/linux-tools/5.4.0-204-generic/perf flamegraph -- target/release/deps/sudoku_wasm-...
-
-### Project ideas
-
-- PrefilledBoard (const)
-  - Prefilled cell
-- PuzzleBoard (const) 
-  - Prefilled or empty cell
-- ResolvingBoard (var)
-  - Cell state:
-    - Prefilled (int);
-    - Resolved (int);
-    - Resolving (int list);
-- Resolver:
-  - Resolve: Take a PuzzleBoard, returns a list of PrefilledBoard
-- Validator:
-  - Validate: Take a Board, returns whether the board is validate
-- PartialResolver:
-  - Resolve: Take a ResolvingBoard, returns a list of ResolveAction
-- ResolveAction:
-  - CellCoordinate
-  - Clues: A list of Clues which provides the context of this action
-  - Action: EliminateState, FillInNumber
-
-
-- Functionalities?
-  - Play with up to 4 friends? (need to check if we need an additional server for webrtc here)
+# TODO list
+- Helps for keyboard shortcut.
+- Touch screen support.
+- Configuration for new games (difficulty, penalty on mistakes, etc.).
+- UI theme settings.
+- Hint supports.
+- Multiplayer supports?
