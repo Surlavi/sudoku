@@ -1,8 +1,6 @@
 use std::{
-    collections::VecDeque,
     fmt::Debug,
-    hint,
-    ops::{Deref, DerefMut},
+    ops::{Deref, DerefMut}, usize,
 };
 
 use crate::*;
@@ -29,11 +27,13 @@ impl Colors {
         self.arr[color as usize] = true;
     }
 
-    fn del(&mut self, color: u8) {
-        if self.arr[color as usize] {
+    fn del(&mut self, color: u8) -> bool {
+        let val = self.arr[color as usize]; 
+        if val {
             self.cnt -= 1
         }
         self.arr[color as usize] = false;
+        return val;
     }
 
     fn has(&self, color: u8) -> bool {
@@ -136,6 +136,33 @@ enum FillResult {
     Fail(NodeIndexType),
 }
 
+
+#[derive(Clone, Copy)]
+struct NodeStack {
+    items: [u8;81],
+    cnt: u8,
+}
+
+impl NodeStack {
+    fn new() -> Self {
+        NodeStack { items: [0;81], cnt: 0 }
+    }
+
+    fn push(&mut self, node: u8) {
+        self.items[self.cnt as usize] = node;
+        self.cnt += 1;
+    }
+
+    fn pop(&mut self) -> Option<u8> {
+        if self.cnt > 0 {
+        self.cnt -= 1;
+        Some(self.items[self.cnt as usize])
+    } else {
+        None}
+    
+    }
+}
+
 impl NodeArray {
     fn uncolored_node_count(&self) -> usize {
         self.iter().filter(|n| n.color == 0).count()
@@ -143,7 +170,7 @@ impl NodeArray {
 
     // Returns the impossible node after the elimination.
     #[inline(never)]
-    fn eliminate_with_idx(&mut self, idx: NodeIndexType) -> Option<NodeIndexType> {
+    fn eliminate_with_idx(&mut self, idx: NodeIndexType, fill_candidates: &mut NodeStack) -> Option<NodeIndexType> {
         let node = &self[idx];
         if node.color == 0 {
             return None;
@@ -154,8 +181,17 @@ impl NodeArray {
             if neigh.color != 0 {
                 continue;
             }
-            neigh.available_colors.del(color);
-            if neigh.available_colors.count() == 0 {
+            // if !neigh.available_colors.has(color) {
+            //     continue;
+            // }
+            if !neigh.available_colors.del(color) {
+                continue;
+            }
+            let cnt = neigh.available_colors.count();
+            if cnt == 1 {
+                fill_candidates.push(neigh_idx as u8);
+            }
+            if cnt == 0 {
                 // It's impossible to fill in this cell.
                 return Some(neigh_idx);
             }
@@ -165,13 +201,13 @@ impl NodeArray {
     }
 
     #[inline(never)]
-    fn eliminate(&mut self, idx: Option<NodeIndexType>) -> Option<NodeIndexType> {
+    fn eliminate(&mut self, idx: Option<NodeIndexType>, fill_candidates: &mut NodeStack) -> Option<NodeIndexType> {
         if let Some(val) = idx {
-            return self.eliminate_with_idx(val)
+            return self.eliminate_with_idx(val, fill_candidates)
         }
 
         for i in 0..self.len() {
-            if let Some(v) = self.eliminate_with_idx(i) {
+            if let Some(v) = self.eliminate_with_idx(i, fill_candidates) {
                 return Some(v);
             }
         }
@@ -179,9 +215,11 @@ impl NodeArray {
     }
 
     #[inline(never)]
-    fn fill_all(&mut self) -> FillResult {
+    fn fill_all(&mut self, fill_candidates: &mut NodeStack) -> FillResult {
         let mut cnt = 0;
-        for i in 0..self.len() {
+        let mut new_fill_candidates = NodeStack::new();
+        while let Some(idx) = fill_candidates.pop() {
+            let i = idx as usize;
             if self[i].color != 0 {
                 continue;
             }
@@ -192,21 +230,25 @@ impl NodeArray {
                 .available_colors
                 .get_unique()
                 .expect("Invalid state");
-            if let Some(impossible_node_idx) = self.eliminate_with_idx(i) {
+            if let Some(impossible_node_idx) = self.eliminate_with_idx(i, &mut new_fill_candidates) {
                 return FillResult::Fail(impossible_node_idx);
             }
             cnt += 1;
         }
+
+        *fill_candidates = new_fill_candidates;
         return FillResult::Success(cnt);
     }
 
     fn eliminate_and_fill(&mut self, idx: Option<NodeIndexType>) -> Option<SolveResult> {
-        if let Some(_) = self.eliminate(idx) {
+        let mut fill_candidates = NodeStack::new();
+
+        if let Some(_) = self.eliminate(idx, &mut fill_candidates) {
             return Some(SolveResult::Invalid);
         }
 
         loop {
-            match self.fill_all() {
+            match self.fill_all(&mut fill_candidates) {
                 FillResult::Success(0) => break,
                 FillResult::Success(_) => continue,
                 FillResult::Fail(_) => return Some(SolveResult::Invalid),
