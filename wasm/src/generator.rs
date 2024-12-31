@@ -25,6 +25,16 @@ pub fn validate(arr: &ColorArray) -> bool {
     return true;
 }
 
+pub fn count_clues(arr: &ColorArray) -> usize {
+    let mut cnt = 0;
+    for i in 0..NODE_COUNT {
+        if arr[i] != 0 {
+            cnt += 1;
+        }
+    }
+    return cnt;
+}
+
 fn shuffle_colors() -> [u8; COLOR_COUNT] {
     let mut ret = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     ret.shuffle(&mut thread_rng());
@@ -80,7 +90,7 @@ fn shuffle_nodes() -> [u8; NODE_COUNT] {
     let mut ret = NODES_ARRAY;
 
     // Deterministic behavior in unit tests.
-    #[cfg(not(test))]
+    // #[cfg(not(test))]
     {
         ret.shuffle(&mut thread_rng());
     }
@@ -129,7 +139,6 @@ fn nodes_sorted_by_colors_num(arr: &ColorArray) -> Vec<u8> {
 fn generate_puzzle_from_full_impl(
     answer: &ColorArray,
     arr: &mut ColorArray,
-    current_non_empty: usize,
     target_non_empty: usize,
     cannot_remove: &[bool; NODE_COUNT],
 ) -> bool {
@@ -144,6 +153,7 @@ fn generate_puzzle_from_full_impl(
         }
     }
 
+    let current_non_empty = count_clues(arr);
     if current_non_empty == target_non_empty {
         return true;
     }
@@ -161,7 +171,6 @@ fn generate_puzzle_from_full_impl(
         if generate_puzzle_from_full_impl(
             answer,
             arr,
-            current_non_empty - 1,
             target_non_empty,
             &cannot_remove_copy,
         ) {
@@ -174,21 +183,68 @@ fn generate_puzzle_from_full_impl(
     return false;
 }
 
+fn generate_sequential(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
+    loop {
+        let nodes_to_remove = shuffle_nodes();
+        let mut puzzle = *answer;
+        for i in 0..(NODE_COUNT - target_non_empty) {
+            let c = puzzle[nodes_to_remove[i] as usize];
+            puzzle[nodes_to_remove[i] as usize] = 0;
+            match fast_solve(&puzzle, Some(&answer)) {
+                SolveResult::Invalid => panic!(),
+                SolveResult::Multiple(_) => {
+                    puzzle[nodes_to_remove[i] as usize] = c;
+                    break;
+                },
+                SolveResult::Unique(_) => continue,
+                SolveResult::Timeout => todo!(),
+            }
+        }
+
+        let non_zero_cnt = puzzle.iter().filter(|&&x| x != 0).count();
+        if non_zero_cnt == target_non_empty {
+            return puzzle;
+        } else if non_zero_cnt < 29 {
+            println!("{}", non_zero_cnt);
+        }
+    }
+}
+
+
+fn generate_mix(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
+    loop {
+        let mut puzzle = generate_sequential(answer, 29);
+        // println!("{:?}", fast_solve(&puzzle, None));
+        if !generate_puzzle_from_full_impl(
+            answer,
+            &mut puzzle,
+            target_non_empty,
+            &[false; NODE_COUNT],
+        ) {
+            continue;
+        }
+        return puzzle;
+    }
+}
+
 // Generates a puzzle from a full sudoku array randomly.
 // target_non_empty controls the minimum number of the non-empty cells in the puzzle.
-// It should not smaller than 17.
-pub fn generate_puzzle_from_full(arr: &ColorArray, target_non_empty: usize) -> ColorArray {
-    let mut puzzle = ColorArray::new(**arr);
-    generate_puzzle_from_full_impl(
-        arr,
-        &mut puzzle,
-        NODE_COUNT,
-        target_non_empty,
-        &[false; NODE_COUNT],
-    );
+// It should not be smaller than 17.
+pub fn generate_puzzle_from_full(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
+    // let mut puzzle = ColorArray::new(**answer);
+    // generate_puzzle_from_full_impl(
+    //     answer,
+    //     &mut puzzle,
+    //     target_non_empty,
+    //     &[false; NODE_COUNT],
+    // );
+
+    let puzzle = generate_mix(answer, target_non_empty);
+
+    // Validate the puzzle again.
     match fast_solve(&puzzle, None) {
-        SolveResult::Unique(answer) => {
-            if answer != *arr {
+        SolveResult::Unique(result) => {
+            if result != *answer {
                 panic!("Invalid state");
             }
         }
@@ -209,6 +265,17 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_puzzle_e2e() {
+        for i in 0..5 {
+            println!("Iteration {}", i);
+            let arr = generate_full();
+            // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
+            let puzzle = generate_puzzle_from_full(&arr, 21);
+            // print!("{}", print_sudoku_array(&puzzle, u8::to_string));
+        }
+    }
+
+    #[test]
     fn test_generate_puzzle_from_full() {
         let arr = SudokuArray::new([
             5, 3, 9, 4, 8, 2, 6, 1, 7, 8, 6, 4, 9, 7, 1, 5, 2, 3, 7, 1, 2, 5, 3, 6, 4, 9, 8, 2, 5,
@@ -216,10 +283,10 @@ mod tests {
             9, 8, 2, 3, 5, 6, 2, 5, 3, 1, 4, 8, 7, 9, 3, 9, 8, 2, 5, 7, 1, 6, 4,
         ]);
 
-        for i in 0..10 {
+        for i in 0..5 {
             println!("Iteration {}", i);
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_puzzle_from_full(&arr, 22);
+            let puzzle = generate_puzzle_from_full(&arr, 21);
             print!("{}", print_sudoku_array(&puzzle, u8::to_string));
         }
     }
