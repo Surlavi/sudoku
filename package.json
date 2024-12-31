@@ -1,7 +1,6 @@
 {
   "name": "sodoku",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
     "test": "jest",
     "lint": "gts lint",
@@ -18,8 +17,10 @@
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^22.7.5",
+    "gh-pages": "^6.2.0",
     "gts": "^6.0.2",
     "jest": "^29.7.0",
+    "parcel": "^2.13.3",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
   }
