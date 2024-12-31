@@ -1,4 +1,4 @@
-use std::time::{Duration};
+use std::time::Duration;
 use web_time::Instant;
 
 use rand::{seq::SliceRandom, thread_rng};
@@ -7,7 +7,7 @@ use crate::*;
 
 // Verifies that the current value at idx is not empty and is valid.
 fn validate_idx(arr: &ColorArray, i: usize) -> bool {
-    if arr[i] <= 0 || arr[i] > (COLOR_COUNT as u8) {
+    if arr[i] == 0 || arr[i] > (COLOR_COUNT as u8) {
         return false;
     }
     for j in NEIGHBOR_ARRAY_MAP[i] {
@@ -15,7 +15,7 @@ fn validate_idx(arr: &ColorArray, i: usize) -> bool {
             return false;
         }
     }
-    return true;
+    true
 }
 
 // Verifies that a sudoku array is valid (no empty cells).
@@ -25,7 +25,7 @@ pub fn validate(arr: &ColorArray) -> bool {
             return false;
         }
     }
-    return true;
+    true
 }
 
 pub fn count_clues(arr: &ColorArray) -> usize {
@@ -35,13 +35,13 @@ pub fn count_clues(arr: &ColorArray) -> usize {
             cnt += 1;
         }
     }
-    return cnt;
+    cnt
 }
 
 fn shuffle_colors() -> [u8; COLOR_COUNT] {
     let mut ret = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     ret.shuffle(&mut thread_rng());
-    return ret;
+    ret
 }
 
 fn generate_full_impl(arr: &mut ColorArray, i: usize) -> bool {
@@ -57,7 +57,7 @@ fn generate_full_impl(arr: &mut ColorArray, i: usize) -> bool {
         }
         arr[i] = 0;
     }
-    return false;
+    false
 }
 
 // Generates a full sudoku array (no empty cells) randomly.
@@ -74,7 +74,7 @@ pub fn generate_full() -> ColorArray {
         );
     }
 
-    return ColorArray::new(*arr);
+    ColorArray::new(*arr)
 }
 
 const fn create_nodes_array() -> [u8; NODE_COUNT] {
@@ -98,7 +98,7 @@ fn shuffle_nodes() -> [u8; NODE_COUNT] {
         ret.shuffle(&mut thread_rng());
     }
 
-    return ret;
+    ret
 }
 
 fn nodes_sorted_by_connected_zeros(arr: &ColorArray) -> Vec<u8> {
@@ -110,7 +110,7 @@ fn nodes_sorted_by_connected_zeros(arr: &ColorArray) -> Vec<u8> {
                 cnt += 1;
             }
         }
-        return cnt;
+        cnt
     };
     // Try sort the nodes by the number of 0 value it connects to.
     let mut pairs = nodes_to_try
@@ -119,9 +119,10 @@ fn nodes_sorted_by_connected_zeros(arr: &ColorArray) -> Vec<u8> {
         .map(|&i| (i, count_zero_in_neighs(i)))
         .collect::<Vec<_>>();
     pairs.sort_by_key(|x| x.1);
-    return pairs.iter().map(|x| x.0).collect();
+    pairs.iter().map(|x| x.0).collect()
 }
 
+#[allow(dead_code)]
 fn nodes_sorted_by_colors_num(arr: &ColorArray) -> Vec<u8> {
     let mut colors = [0; COLOR_COUNT + 1];
     for i in 0..arr.len() {
@@ -136,7 +137,7 @@ fn nodes_sorted_by_colors_num(arr: &ColorArray) -> Vec<u8> {
         .map(|&i| (i, colors[arr[i as usize] as usize]))
         .collect::<Vec<_>>();
     pairs.sort_by_key(|x| x.1);
-    return pairs.iter().map(|x| x.0).collect();
+    pairs.iter().map(|x| x.0).collect()
 }
 
 struct IntermediateResult {
@@ -146,10 +147,10 @@ struct IntermediateResult {
 
 impl IntermediateResult {
     fn new() -> Self {
-        return Self {
+        Self {
             best_puzzle: None,
             best_hint_cnt: NODE_COUNT,
-        };
+        }
     }
     fn update_puzzle(&mut self, puzzle: &ColorArray) {
         let cnt = count_clues(puzzle);
@@ -167,7 +168,7 @@ fn generate_puzzle_from_full_impl(
     cannot_remove: &[bool; NODE_COUNT],
     tmp_result: &mut IntermediateResult,
 ) -> bool {
-    match fast_solve(&arr, Some(&answer)) {
+    match fast_solve(arr, Some(answer)) {
         SolveResult::Invalid => panic!("Got an invalid array"),
         SolveResult::Multiple(_) => {
             return false;
@@ -184,8 +185,8 @@ fn generate_puzzle_from_full_impl(
         return true;
     }
 
-    let mut cannot_remove_copy = cannot_remove.clone();
-    for i in nodes_sorted_by_connected_zeros(&arr) {
+    let mut cannot_remove_copy = *cannot_remove;
+    for i in nodes_sorted_by_connected_zeros(arr) {
         if cannot_remove[i as usize] {
             continue;
         }
@@ -207,7 +208,7 @@ fn generate_puzzle_from_full_impl(
         cannot_remove_copy[i as usize] = true;
     }
 
-    return false;
+    false
 }
 
 fn generate_sequential(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
@@ -217,7 +218,7 @@ fn generate_sequential(answer: &ColorArray, target_non_empty: usize) -> ColorArr
         for i in 0..(NODE_COUNT - target_non_empty) {
             puzzle[nodes_to_remove[i] as usize] = 0;
         }
-        match fast_solve(&puzzle, Some(&answer)) {
+        match fast_solve(&puzzle, Some(answer)) {
             SolveResult::Invalid => panic!(),
             SolveResult::Multiple(_) => {
                 continue;
@@ -281,7 +282,7 @@ pub fn generate_puzzle_from_full(answer: &ColorArray, target_non_empty: usize) -
         }
         _ => todo!(),
     }
-    return puzzle;
+    puzzle
 }
 
 #[cfg(test)]
@@ -302,7 +303,7 @@ mod tests {
             let arr = generate_full();
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
             let puzzle = generate_sequential(&arr, 28);
-            // print!("{}", print_sudoku_array(&puzzle, u8::to_string));
+            print!("{}", print_sudoku_array(&puzzle, u8::to_string));
         }
     }
 
@@ -313,7 +314,7 @@ mod tests {
             let arr = generate_full();
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
             let puzzle = generate_puzzle_from_full(&arr, 17);
-            // print!("{}", print_sudoku_array(&puzzle, u8::to_string));
+            print!("{}", print_sudoku_array(&puzzle, u8::to_string));
         }
     }
 

@@ -1,8 +1,6 @@
 use std::{
     fmt::Debug,
-    hint,
     ops::{Deref, DerefMut},
-    usize,
 };
 
 use crate::*;
@@ -16,12 +14,13 @@ struct Colors {
 
 impl Colors {
     fn new(val: bool) -> Self {
-        return Colors {
+        Colors {
             arr: [val; COLOR_COUNT + 1],
             cnt: if val { COLOR_COUNT } else { 0 },
-        };
+        }
     }
 
+    #[allow(dead_code)]
     fn set(&mut self, color: u8) {
         if !self.arr[color as usize] {
             self.cnt += 1
@@ -35,15 +34,16 @@ impl Colors {
             self.cnt -= 1
         }
         self.arr[color as usize] = false;
-        return val;
+        val
     }
 
+    #[allow(dead_code)]
     fn has(&self, color: u8) -> bool {
-        return self.arr[color as usize];
+        self.arr[color as usize]
     }
 
     fn count(&self) -> usize {
-        return self.cnt;
+        self.cnt
     }
 
     fn get_unique(&self) -> Option<u8> {
@@ -57,7 +57,7 @@ impl Colors {
                 None => ret = Some(i as u8),
             }
         }
-        return ret;
+        ret
     }
 
     fn get_all_no_allocate(
@@ -77,17 +77,17 @@ impl Colors {
             // Note: start from the hint seems to be faster.
             let i = (start_idx + j as u8) % (COLOR_COUNT as u8) + 1;
             if self.arr[i as usize] {
-                output_buffer[ret] = i as u8;
+                output_buffer[ret] = i;
                 ret += 1;
             }
         }
-        return ret;
+        ret
     }
 
     fn get_all(&self) -> Vec<u8> {
         let mut buffer = [0; COLOR_COUNT];
         let cnt = self.get_all_no_allocate(None, &mut buffer);
-        return buffer[0..cnt].to_vec();
+        buffer[0..cnt].to_vec()
     }
 }
 
@@ -104,7 +104,6 @@ impl Debug for Colors {
 }
 
 mod neighbor_based {
-    use std::hint;
 
     use super::*;
 
@@ -117,7 +116,7 @@ mod neighbor_based {
     impl Node {
         fn new(color: u8) -> Self {
             Self {
-                color: color,
+                color,
                 available_colors: Colors::new(true),
             }
         }
@@ -146,13 +145,13 @@ mod neighbor_based {
         }
     }
 
-    impl Into<ColorArray> for &NodeArray {
-        fn into(self) -> ColorArray {
+    impl From<&NodeArray> for ColorArray {
+        fn from(val: &NodeArray) -> Self {
             let mut ret = SudokuArray::new([0; NODE_COUNT]);
-            for (i, node) in self.iter().enumerate() {
+            for (i, node) in val.iter().enumerate() {
                 ret[i] = node.color;
             }
-            return ret;
+            ret
         }
     }
 
@@ -160,7 +159,7 @@ mod neighbor_based {
         // Returns the number of nodes which were filled successfully.
         Success(usize),
         // After filling some numbers, there is one or more nodes which cannot be filled in any numbers. Returns the first conflit node idx.
-        Fail(NodeIndexType),
+        Fail(),
     }
 
     #[derive(Clone, Copy)]
@@ -230,7 +229,7 @@ mod neighbor_based {
                 }
                 // print!("Remove color {} from {} due to {}, remaining {:?}\n", color, neigh_idx, idx, neigh.available_colors);
             }
-            return None;
+            None
         }
 
         #[inline(never)]
@@ -248,7 +247,7 @@ mod neighbor_based {
                     return Some(v);
                 }
             }
-            return None;
+            None
         }
 
         #[inline(never)]
@@ -264,22 +263,23 @@ mod neighbor_based {
                     continue;
                 }
                 self[i].color = self[i].available_colors.get_unique().unwrap();
-                if let Some(impossible_node_idx) =
-                    self.eliminate_with_idx(i, &mut new_fill_candidates)
+                if self
+                    .eliminate_with_idx(i, &mut new_fill_candidates)
+                    .is_some()
                 {
-                    return FillResult::Fail(impossible_node_idx);
+                    return FillResult::Fail();
                 }
                 cnt += 1;
             }
 
             *fill_candidates = new_fill_candidates;
-            return FillResult::Success(cnt);
+            FillResult::Success(cnt)
         }
 
         fn eliminate_and_fill(&mut self, idx: Option<NodeIndexType>) -> Option<SolveResult> {
             let mut fill_candidates = NodeStack::new();
 
-            if let Some(_) = self.eliminate(idx, &mut fill_candidates) {
+            if self.eliminate(idx, &mut fill_candidates).is_some() {
                 return Some(SolveResult::Invalid);
             }
 
@@ -287,13 +287,13 @@ mod neighbor_based {
                 match self.fill_all(&mut fill_candidates) {
                     FillResult::Success(0) => break,
                     FillResult::Success(_) => continue,
-                    FillResult::Fail(_) => return Some(SolveResult::Invalid),
+                    FillResult::Fail() => return Some(SolveResult::Invalid),
                 }
             }
             if self.uncolored_node_count() == 0 {
                 return Some(SolveResult::Unique(self.create_color_array()));
             }
-            return None;
+            None
         }
 
         fn create_color_array(&self) -> ColorArray {
@@ -301,11 +301,11 @@ mod neighbor_based {
             for (i, node) in self.iter().enumerate() {
                 ret[i] = node.color;
             }
-            return ret;
+            ret
         }
 
-        #[inline(never)]
         // Check if the current board is valid. This is useful in debugging.
+        #[allow(dead_code)]
         fn find_invalid_cell(&self) -> Option<NodeIndexType> {
             for i in 0..NODE_COUNT {
                 for j in NEIGHBOR_ARRAY_MAP[i] {
@@ -335,7 +335,7 @@ mod neighbor_based {
                     min_idx = Some(i);
                 }
             }
-            return min_idx;
+            min_idx
         }
     }
 
@@ -344,7 +344,7 @@ mod neighbor_based {
         if let Some(result) = node_arr.eliminate_and_fill(None) {
             return result;
         }
-        return solve_with_backtracing(node_arr, hint_answer);
+        solve_with_backtracing(node_arr, hint_answer)
     }
 
     fn solve_with_backtracing(
@@ -392,12 +392,12 @@ mod neighbor_based {
             }
         }
 
-        return match answers.len() {
+        match answers.len() {
             0 => SolveResult::Invalid,
             1 => SolveResult::Unique(SudokuArray::new(*answers[0])),
             // Already handled above in the loop.
             _ => panic!("Unexpected multiple answer found"),
-        };
+        }
     }
 }
 
@@ -410,14 +410,16 @@ pub enum SolveResult {
     // Multiple results can be found. Note that the list wrapped in this value may not be the complete list for all valid results.
     Multiple(Vec<ColorArray>),
     // Failed to valid result in the given timeout (there can be valid result or not).
+    #[allow(dead_code)]
     Timeout,
 }
 
 pub fn fast_solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
-    return neighbor_based::solve(puzzle, hint_answer);
+    neighbor_based::solve(puzzle, hint_answer)
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]

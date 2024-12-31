@@ -14,7 +14,7 @@ pub struct SudokuArray<T>([T; NODE_COUNT]);
 
 impl<T> SudokuArray<T> {
     pub fn new(data: [T; NODE_COUNT]) -> Self {
-        return Self(data);
+        Self(data)
     }
 }
 
@@ -44,13 +44,13 @@ impl<T: Copy> TryFrom<&[T]> for SudokuArray<T> {
 
 pub fn print_sudoku_array<T>(data: &[T; NODE_COUNT], printer: fn(&T) -> String) -> String {
     let mut buffer = String::new();
-    for i in 0..data.len() {
-        buffer += &printer(&data[i]);
+    for (i, val) in data.iter().enumerate() {
+        buffer += &printer(val);
         if i % COLOR_COUNT == COLOR_COUNT - 1 {
             buffer += "\n";
         }
     }
-    return buffer;
+    buffer
 }
 
 pub type NodeIndexType = usize;
@@ -102,7 +102,7 @@ const fn get_neighs_for_idx(idx: usize) -> NeighborArray {
         panic!("Unexpected neighbor count");
     }
 
-    return ret;
+    ret
 }
 
 const fn build_neigh_arr_map() -> NeighborArrayMap {
@@ -112,7 +112,7 @@ const fn build_neigh_arr_map() -> NeighborArrayMap {
         ret[i] = get_neighs_for_idx(i);
         i += 1;
     }
-    return SudokuArray(ret);
+    SudokuArray(ret)
 }
 
 #[cfg(test)]
