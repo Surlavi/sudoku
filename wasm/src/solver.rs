@@ -165,7 +165,11 @@ impl NodeArray {
     }
 
     #[inline(never)]
-    fn eliminate(&mut self) -> Option<NodeIndexType> {
+    fn eliminate(&mut self, idx: Option<NodeIndexType>) -> Option<NodeIndexType> {
+        if let Some(val) = idx {
+            return self.eliminate_with_idx(val)
+        }
+
         for i in 0..self.len() {
             if let Some(v) = self.eliminate_with_idx(i) {
                 return Some(v);
@@ -197,12 +201,7 @@ impl NodeArray {
     }
 
     fn eliminate_and_fill(&mut self, idx: Option<NodeIndexType>) -> Option<SolveResult> {
-        let eliminate_result = if let Some(val) = idx {
-            self.eliminate_with_idx(val)
-        } else {
-            self.eliminate()
-        };
-        if let Some(_) = eliminate_result {
+        if let Some(_) = self.eliminate(idx) {
             return Some(SolveResult::Invalid);
         }
 
