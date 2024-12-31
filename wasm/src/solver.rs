@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     fmt::Debug,
     hint,
     ops::{Deref, DerefMut},
@@ -7,7 +8,7 @@ use std::{
 use crate::*;
 
 #[derive(Clone, Copy)]
-struct Colors{
+struct Colors {
     arr: [bool; COLOR_COUNT + 1],
     // cnt is a bottleneck, so cache the value instead.
     cnt: usize,
@@ -15,19 +16,23 @@ struct Colors{
 
 impl Colors {
     fn new(val: bool) -> Self {
-        return Colors{
-            arr: [val; COLOR_COUNT + 1], 
-            cnt: if val {COLOR_COUNT} else {0},
+        return Colors {
+            arr: [val; COLOR_COUNT + 1],
+            cnt: if val { COLOR_COUNT } else { 0 },
         };
     }
 
     fn set(&mut self, color: u8) {
-        if !self.arr[color as usize] {self.cnt += 1}
+        if !self.arr[color as usize] {
+            self.cnt += 1
+        }
         self.arr[color as usize] = true;
     }
 
     fn del(&mut self, color: u8) {
-        if self.arr[color as usize] {self.cnt -= 1}
+        if self.arr[color as usize] {
+            self.cnt -= 1
+        }
         self.arr[color as usize] = false;
     }
 
@@ -68,9 +73,10 @@ impl Debug for Colors {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{{count: {}, unique: {:?}}}",
+            "{{count: {}, unique: {:?}, colors: {:?}}}",
             self.count(),
-            self.get_unique()
+            self.get_unique(),
+            self.get_all()
         )
     }
 }
@@ -159,14 +165,17 @@ impl NodeArray {
     }
 
     #[inline(never)]
-    fn eliminate(&mut self) {
+    fn eliminate(&mut self) -> Option<NodeIndexType> {
         for i in 0..self.len() {
-            self.eliminate_with_idx(i);
+            if let Some(v) = self.eliminate_with_idx(i) {
+                return Some(v);
+            }
         }
+        return None;
     }
 
     #[inline(never)]
-    fn fill(&mut self) -> FillResult {
+    fn fill_all(&mut self) -> FillResult {
         let mut cnt = 0;
         for i in 0..self.len() {
             if self[i].color != 0 {
@@ -187,6 +196,37 @@ impl NodeArray {
         return FillResult::Success(cnt);
     }
 
+    fn eliminate_and_fill(&mut self, idx: Option<NodeIndexType>) -> Option<SolveResult> {
+        let eliminate_result = if let Some(val) = idx {
+            self.eliminate_with_idx(val)
+        } else {
+            self.eliminate()
+        };
+        if let Some(_) = eliminate_result {
+            return Some(SolveResult::Invalid);
+        }
+
+        loop {
+            match self.fill_all() {
+                FillResult::Success(0) => break,
+                FillResult::Success(_) => continue,
+                FillResult::Fail(_) => return Some(SolveResult::Invalid),
+            }
+        }
+        if self.uncolored_node_count() == 0 {
+            return Some(SolveResult::Unique(self.create_color_array()));
+        }
+        return None
+    }
+
+    fn create_color_array(&self) -> ColorArray {
+        let mut ret = SudokuArray::new([0; NODE_COUNT]);
+        for (i, node) in self.iter().enumerate() {
+            ret[i] = node.color;
+        }
+        return ret;
+    }
+
     #[inline(never)]
     fn find_invalid_cell(&self) -> Option<NodeIndexType> {
         for i in 0..NODE_COUNT {
@@ -200,17 +240,6 @@ impl NodeArray {
             }
         }
         None
-    }
-
-    // Returns the number of remaining nodes to be colored, or None if the graph cannot be colored.
-    fn fill_eliminate_loop(&mut self) -> Option<usize> {
-        loop {
-            match self.fill() {
-                FillResult::Success(0) => return Some(self.uncolored_node_count()),
-                FillResult::Success(_) => continue,
-                FillResult::Fail(_) => return None,
-            }
-        }
     }
 
     // Returns the index of an uncolored node for backtracing.
@@ -246,64 +275,49 @@ pub fn fast_solve(puzzle: &ColorArray) -> SolveResult {
 
 pub fn fast_solve_with_hint(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
     let mut node_arr: NodeArray = NodeArray::from(puzzle);
-    node_arr.eliminate();
-    return fast_solve_impl(node_arr, hint_answer);
+    if let Some(result) = node_arr.eliminate_and_fill(None) {
+        return result;
+    }
+    return solve_with_backtracing(node_arr, hint_answer);
 }
 
-fn fast_solve_impl(
-    mut node_arr: NodeArray,
-    hint_answer: Option<&ColorArray>,
-) -> SolveResult {
-    if let Some(_) = node_arr.find_invalid_cell() {
-        return SolveResult::Invalid;
-    }
+fn solve_with_backtracing(node_arr: NodeArray, hint_answer: Option<&ColorArray>) -> SolveResult {
+    // println!("{}\n", node_arr.uncolored_node_count());
+    let idx = node_arr.pick_up_uncolored_node().expect("Invalid state");
+    let mut answers = vec![];
+    let colors = node_arr[idx].available_colors.get_all();
+    for c in colors {
+        let mut node_arr_copy = node_arr;
+        node_arr_copy[idx].color = c;
+        // println!("filling {} to {}\n", c, idx);
+        let result = node_arr_copy
+            .eliminate_and_fill(Some(idx))
+            .unwrap_or_else(|| solve_with_backtracing(node_arr_copy, hint_answer));
+        match result {
+            SolveResult::Invalid => {
 
-    match node_arr.fill_eliminate_loop() {
-        // No uncolored node. All work done.
-        Some(0) => {
-            // print!("Found an answer\n");
-            let answer: ColorArray = (&node_arr).into();
-            if hint_answer.is_some_and(|x| *x != answer) {
-                return SolveResult::Multiple(vec![*hint_answer.expect(""), answer]);
+                continue},
+            SolveResult::Unique(answer) => {
+                answers.push(answer);
             }
-            return SolveResult::Unique((&node_arr).into());
+            SolveResult::Multiple(new_answers) => {
+                answers.extend(new_answers);
+            }
+            SolveResult::Timeout => return SolveResult::Timeout,
         }
-        // Unable to color the graph. The input is invalid.
-        None => return SolveResult::Invalid,
-        // Unable to solve the puzzle with the simple strategy. Try backtracking then.
-        Some(_) => {
-            // print!("Remaining {}\n", remaining_cnt);
-            let idx = node_arr.pick_up_uncolored_node().expect("Invalid state");
-            let mut answers = vec![];
-            let colors = node_arr[idx].available_colors.get_all();
-            for c in colors {
-                let mut node_arr_copy = node_arr;
-                node_arr_copy[idx].color = c;
-                node_arr_copy.eliminate_with_idx(idx);
-                match fast_solve_impl(node_arr_copy, hint_answer) {
-                    SolveResult::Invalid => continue,
-                    SolveResult::Unique(answer) => {
-                        answers.push(answer);
-                    }
-                    SolveResult::Multiple(new_answers) => {
-                        answers.extend(new_answers);
-                    }
-                    SolveResult::Timeout => return SolveResult::Timeout,
-                }
 
-                // Now that we already have multiple answers, just return them. By definition, this function does not have to return all the valid answers.
-                if answers.len() > 1 {
-                    return SolveResult::Multiple(answers);
-                }
-            }
-            return match answers.len() {
-                0 => SolveResult::Invalid,
-                1 => SolveResult::Unique(SudokuArray::new(*answers[0])),
-                // Already handled above in the loop.
-                _ => panic!("Unexpected multiple answer found"),
-            };
+        // Now that we already have multiple answers, just return them. By definition, this function does not have to return all the valid answers.
+        if answers.len() > 1 {
+            return SolveResult::Multiple(answers);
         }
     }
+
+    return match answers.len() {
+        0 => SolveResult::Invalid,
+        1 => SolveResult::Unique(SudokuArray::new(*answers[0])),
+        // Already handled above in the loop.
+        _ => panic!("Unexpected multiple answer found"),
+    };
 }
 
 mod tests {

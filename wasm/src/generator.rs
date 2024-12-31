@@ -217,7 +217,7 @@ mod tests {
         ]);
 
         // 23~24 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-        let puzzle = generate_puzzle_from_full(&arr, 22);
+        let puzzle = generate_puzzle_from_full(&arr, 21);
         print!("{}", print_sudoku_array(&puzzle, u8::to_string));
     }
 }
