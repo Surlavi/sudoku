@@ -1,5 +1,6 @@
 use std::{
     fmt::Debug,
+    hint,
     ops::{Deref, DerefMut},
     usize,
 };
@@ -59,10 +60,23 @@ impl Colors {
         return ret;
     }
 
-    fn get_all_no_allocate(&self, output_buffer: &mut [u8; COLOR_COUNT]) -> usize {
+    fn get_all_no_allocate(
+        &self,
+        hint_color: Option<u8>,
+        output_buffer: &mut [u8; COLOR_COUNT],
+    ) -> usize {
+        // Uncomment for debugging.
+        // if let Some(c) = hint_color {
+        //     if !self.arr[c as usize] {
+        //         panic!()
+        //     }
+        // }
         let mut ret = 0;
-        for i in 1..COLOR_COUNT + 1 {
-            if self.arr[i] {
+        let start_idx = hint_color.unwrap_or(1) - 1;
+        for j in 0..COLOR_COUNT {
+            // Note: start from the hint seems to be faster.
+            let i = (start_idx + j as u8) % (COLOR_COUNT as u8) + 1;
+            if self.arr[i as usize] {
                 output_buffer[ret] = i as u8;
                 ret += 1;
             }
@@ -72,7 +86,7 @@ impl Colors {
 
     fn get_all(&self) -> Vec<u8> {
         let mut buffer = [0; COLOR_COUNT];
-        let cnt = self.get_all_no_allocate(&mut buffer);
+        let cnt = self.get_all_no_allocate(None, &mut buffer);
         return buffer[0..cnt].to_vec();
     }
 }
@@ -90,6 +104,8 @@ impl Debug for Colors {
 }
 
 mod neighbor_based {
+    use std::hint;
+
     use super::*;
 
     #[derive(Clone, Copy)]
@@ -323,10 +339,7 @@ mod neighbor_based {
         }
     }
 
-    pub fn solve(
-        puzzle: &ColorArray,
-        hint_answer: Option<&ColorArray>,
-    ) -> SolveResult {
+    pub fn solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
         let mut node_arr: NodeArray = NodeArray::from(puzzle);
         if let Some(result) = node_arr.eliminate_and_fill(None) {
             return result;
@@ -342,16 +355,26 @@ mod neighbor_based {
         let idx = node_arr.pick_up_uncolored_node_fast().unwrap();
         let mut answers = vec![];
         let mut colors_buf = [0; COLOR_COUNT];
+        let hint_color: Option<u8> = hint_answer.map(|x| x[idx]);
         let colors_cnt = node_arr[idx]
             .available_colors
-            .get_all_no_allocate(&mut colors_buf);
+            .get_all_no_allocate(hint_color, &mut colors_buf);
         for &c in &colors_buf[0..colors_cnt] {
             let mut node_arr_copy = node_arr;
             node_arr_copy[idx].color = c;
             // println!("filling {} to {}\n", c, idx);
             let result = node_arr_copy
                 .eliminate_and_fill(Some(idx))
-                .unwrap_or_else(|| solve_with_backtracing(node_arr_copy, hint_answer));
+                .unwrap_or_else(|| {
+                    solve_with_backtracing(
+                        node_arr_copy,
+                        if Some(c) == hint_color {
+                            hint_answer
+                        } else {
+                            None
+                        },
+                    )
+                });
             match result {
                 SolveResult::Invalid => continue,
                 SolveResult::Unique(answer) => {
