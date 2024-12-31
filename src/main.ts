@@ -37,7 +37,7 @@ function startUi() {
 
   // Create a random game.
   const puzzleArr = new Uint8Array(81);
-  wasm.generate(25, puzzleArr);
+  wasm.generate(18, puzzleArr);
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_resolve(answerArr);
 
@@ -126,6 +126,7 @@ async function main() {
       ]);
       console.log(wasm.fast_resolve(arr));
       console.log(arr);
+      wasm.init_panic_hook();
       startUi();
     });
   } catch (error) {
