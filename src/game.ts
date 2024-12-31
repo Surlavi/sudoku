@@ -5,10 +5,14 @@ import {eliminatePossibleStates, ResolvingBoard} from './resolve.js';
 export class Game {
   answerBoard: Board;
   puzzleBoard: ResolvingBoard;
+  startTime: DOMHighResTimeStamp;
+  endTime: DOMHighResTimeStamp | null = null;
+  mistakes = 0;
 
   constructor(answer: Board, puzzle: Board) {
     this.answerBoard = answer;
     this.puzzleBoard = ResolvingBoard.createFromBoard(puzzle);
+    this.startTime = performance.now();
   }
 
   fillInNumber(coord: Coordinates, value: number) {
@@ -20,11 +24,17 @@ export class Game {
 
     // TODO: This part should be able to be controlled by rules.
     if (this.answerBoard.cells[coord.linearIndex].value !== value) {
-      alert('Game over');
+      alert('Not correct :)');
+      this.mistakes++;
       return;
     }
 
     cell.fillNumber(value);
+
+    if (this.isAllCorrect()) {
+      this.endTime = performance.now();
+      alert('Congratulations!!!');
+    }
   }
 
   toggleDraftNumber(coord: Coordinates, value: number) {
@@ -49,5 +59,32 @@ export class Game {
     }
     const actions = eliminatePossibleStates(this.puzzleBoard);
     this.puzzleBoard.takeActions(actions);
+  }
+
+  getEmptyCellsCount(): number {
+    let cnt = 0;
+    for (const cell of this.puzzleBoard.cells) {
+      if (!cell.hasNumber()) {
+        cnt++;
+      }
+    }
+    return cnt;
+  }
+
+  getElapsedSeconds(): number {
+    let end = performance.now();
+    if (this.endTime !== null) {
+      end = this.endTime;
+    }
+    return Math.round((end - this.startTime) / 1000);
+  }
+
+  private isAllCorrect(): boolean {
+    for (let i = 0; i < 81; ++i) {
+      if (this.puzzleBoard.cells[i].value !== this.answerBoard.cells[i].value) {
+        return false;
+      }
+    }
+    return true;
   }
 }

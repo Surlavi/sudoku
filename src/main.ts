@@ -1,43 +1,34 @@
 import init, * as wasm from '../wasm/pkg/sudoku_wasm.js';
-import {BoardUi, Config, MoveDirection} from './board_ui.js';
+import {BoardUi, MoveDirection} from './board_ui.js';
 import {getCurrentTheme} from './theme.js';
 import {GenericBoard} from './types.js';
 import {Game} from './game.js';
 
-const BOARD_EXAMPLE = `
-. . 3 . 2 . 6 . .
-9 . . 3 . 5 . . 1
-. . 1 8 . 6 4 . .
-. . 8 1 . 2 9 . .
-7 . . . . . . . 8
-. . 6 7 . 8 2 . .
-. . 2 6 . 9 5 . .
-8 . . 2 . 3 . . 9
-. . 5 . 1 . 3 . .
-`;
-
-const ANSWER = `
-4 8 3 9 2 1 6 7 5
-9 6 7 3 4 5 8 2 1
-2 5 1 8 7 6 4 3 9
-5 4 8 1 3 2 9 6 7
-7 3 9 5 6 4 1 8 2
-1 2 6 7 9 8 2 5 4
-3 7 2 6 8 9 5 1 4
-8 1 4 2 5 3 7 6 9
-6 9 5 4 1 7 3 8 2
-`;
-
 function startUi() {
+  const welcomeScreen = document.getElementById('welcome');
+  if (welcomeScreen === null) {
+    console.error('failed to load welcome screen');
+    return;
+  }
+
+  const appContainerDomNode = document.getElementById('app-container');
   const appDomNode = document.getElementById('app');
-  if (appDomNode === null) {
+
+  appDomNode!.style.height = `${appContainerDomNode!.clientHeight}px`;
+  console.log('setting height to %d', appContainerDomNode!.clientHeight);
+
+  const boardDomNode = document.getElementById('board');
+  if (boardDomNode === null) {
     console.log('Failed to find the dom node');
     return;
   }
 
   // Create a random game.
   const puzzleArr = new Uint8Array(81);
-  wasm.generate(18, puzzleArr);
+  wasm.generate(60, puzzleArr);
+
+  welcomeScreen.style.opacity = '0';
+
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_resolve(answerArr);
 
@@ -52,12 +43,33 @@ function startUi() {
     puzzleArr.join('').replaceAll('0', '.'),
   );
   const game = new Game(answer, puzzle);
-  const boardUi = new BoardUi(appDomNode, game.puzzleBoard, {
-    size: 800,
+  const boardUi = new BoardUi(boardDomNode, game.puzzleBoard, {
+    size: boardDomNode.clientWidth,
     highlightCursorNeighbors: true,
     highlightNumber: true,
     highlightNumberNeighbors: true,
   });
+
+  appDomNode!.style.opacity = '1';
+
+  function refreshBanner(once = false) {
+    console.log('called');
+
+    const timerDom = document.getElementById('value-timer')!;
+    const mistakesDom = document.getElementById('value-mistakes')!;
+    const remainingDom = document.getElementById('value-remaining')!;
+
+    timerDom.textContent = `${secondsToHumanReadable(game.getElapsedSeconds())}`;
+    mistakesDom.textContent = `${game.mistakes}`;
+    remainingDom.textContent = `${game.getEmptyCellsCount()}`;
+
+    // TODO: Add stop condition.
+    if (!once) {
+      setTimeout(refreshBanner, 1000);
+    }
+  }
+
+  refreshBanner();
 
   window.addEventListener('keydown', (ev: KeyboardEvent) => {
     let direction: MoveDirection | null = null;
@@ -109,8 +121,17 @@ function startUi() {
         game.toggleDraftNumber(boardUi.cursorCoord, value);
       }
       boardUi.updateBoard();
+      refreshBanner(true);
     }
   });
+}
+
+function secondsToHumanReadable(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+  return `${formattedMinutes}:${formattedSeconds}`;
 }
 
 async function main() {

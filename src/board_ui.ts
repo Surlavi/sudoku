@@ -46,6 +46,8 @@ export enum MoveDirection {
   LEFT,
 }
 
+const CANVAS_MARGIN = 5;
+
 export interface Config {
   // Size of the canvas.
   size: number;
@@ -95,11 +97,11 @@ export class BoardUi {
   }
 
   private getCellSize(): number {
-    return this.config.size / 11;
+    return (this.config.size - CANVAS_MARGIN * 2) / 9;
   }
 
   private getCanvasPosForIdx(index: number): number {
-    return this.getCellSize() * (index + 1);
+    return CANVAS_MARGIN + this.getCellSize() * index;
   }
 
   private getIdxForCanvasPos(pos: number): number | null {

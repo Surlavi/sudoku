@@ -4,9 +4,81 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sudoku</title>
+    <style>
+      body {
+        margin: 0; /* Remove default body margins */
+        font-family: sans-serif; /* Use a default font */
+        display: flex; /* Enable flexbox for vertical centering */
+        flex-direction: column; /* Stack content vertically */
+        min-height: 100vh; /* Ensure body covers full viewport height */
+        overflow-x: hidden; /* Prevent horizontal scrolling on body */
+        overflow-y: hidden; /* Prevent horizontal scrolling on body */
+      }
+
+      #app-container {
+        width: 640px; /* Set a maximum width for larger screens */
+        margin: 0px auto; /* Center the container horizontally with top/bottom margins */
+        box-sizing: border-box; /* Include padding and border in element's total width and height */
+        flex: 1 0 auto; /* Prevent content from shrinking */
+        position: relative;
+      }
+
+      /* Styles for smaller screens (phones) */
+      @media (max-width: 640px) { /* Adjust breakpoint as needed */
+        #app-container {
+          max-width: 100%; /* Full width on smaller screens */
+        }
+      }
+
+      #welcome {
+        width: 100%;
+        position: absolute;
+        display: flex; 
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+        font-size: 3em;
+      }
+
+      #app {
+        position: relative;
+      }
+
+      #app>div {
+        width: 100%;
+      }
+
+      #board-banner {
+        margin: 40px 5px 5px;
+        position: relative;
+        width: 100%;
+      }
+
+      #board-banner>span {
+        display: inline-block;
+        width: 33%;
+      }
+
+      .fading {
+        transition: opacity 0.5s ease-in-out;
+      }
+
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app-container">
+      <div id="welcome" class="fading">Loading</div>
+      <div id="app" class="fading" style="opacity: 0;">
+        <div id="board-banner">
+          <span style="text-align: left;">Timer:&nbsp;<span id="value-timer">0:00</span>
+          </span><span style="text-align: center;">Mistakes:&nbsp;<span id="value-mistakes">0</span>&nbsp;
+          </span><span style="text-align: right;">Remaining:&nbsp;<span id="value-remaining">0</span>&nbsp;
+          </span>
+        </div>
+        <div id="board" style="position: relative;">
+        </div>
+      </div>
+    </div>
     <script type="module" src="/build/src/main.js"></script>
   </body>
 </html>
