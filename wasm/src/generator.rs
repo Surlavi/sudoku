@@ -133,7 +133,7 @@ fn generate_puzzle_from_full_impl(
     target_non_empty: usize,
     cannot_remove: &[bool; NODE_COUNT],
 ) -> bool {
-    match fast_solve_with_hint(&arr, Some(&answer)) {
+    match fast_solve(&arr, Some(&answer)) {
         SolveResult::Invalid => panic!("Got an invalid array"),
         SolveResult::Multiple(_) => {
             return false;
@@ -186,7 +186,7 @@ pub fn generate_puzzle_from_full(arr: &ColorArray, target_non_empty: usize) -> C
         target_non_empty,
         &[false; NODE_COUNT],
     );
-    match fast_solve(&puzzle) {
+    match fast_solve(&puzzle, None) {
         SolveResult::Unique(answer) => {
             if answer != *arr {
                 panic!("Invalid state");
