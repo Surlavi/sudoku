@@ -1,6 +1,7 @@
 use std::{
     fmt::Debug,
-    ops::{Deref, DerefMut}, usize,
+    ops::{Deref, DerefMut},
+    usize,
 };
 
 use crate::*;
@@ -28,7 +29,7 @@ impl Colors {
     }
 
     fn del(&mut self, color: u8) -> bool {
-        let val = self.arr[color as usize]; 
+        let val = self.arr[color as usize];
         if val {
             self.cnt -= 1
         }
@@ -136,16 +137,18 @@ enum FillResult {
     Fail(NodeIndexType),
 }
 
-
 #[derive(Clone, Copy)]
 struct NodeStack {
-    items: [u8;81],
+    items: [u8; 81],
     cnt: u8,
 }
 
 impl NodeStack {
     fn new() -> Self {
-        NodeStack { items: [0;81], cnt: 0 }
+        NodeStack {
+            items: [0; 81],
+            cnt: 0,
+        }
     }
 
     fn push(&mut self, node: u8) {
@@ -155,11 +158,11 @@ impl NodeStack {
 
     fn pop(&mut self) -> Option<u8> {
         if self.cnt > 0 {
-        self.cnt -= 1;
-        Some(self.items[self.cnt as usize])
-    } else {
-        None}
-    
+            self.cnt -= 1;
+            Some(self.items[self.cnt as usize])
+        } else {
+            None
+        }
     }
 }
 
@@ -170,7 +173,11 @@ impl NodeArray {
 
     // Returns the impossible node after the elimination.
     #[inline(never)]
-    fn eliminate_with_idx(&mut self, idx: NodeIndexType, fill_candidates: &mut NodeStack) -> Option<NodeIndexType> {
+    fn eliminate_with_idx(
+        &mut self,
+        idx: NodeIndexType,
+        fill_candidates: &mut NodeStack,
+    ) -> Option<NodeIndexType> {
         let node = &self[idx];
         if node.color == 0 {
             return None;
@@ -201,9 +208,13 @@ impl NodeArray {
     }
 
     #[inline(never)]
-    fn eliminate(&mut self, idx: Option<NodeIndexType>, fill_candidates: &mut NodeStack) -> Option<NodeIndexType> {
+    fn eliminate(
+        &mut self,
+        idx: Option<NodeIndexType>,
+        fill_candidates: &mut NodeStack,
+    ) -> Option<NodeIndexType> {
         if let Some(val) = idx {
-            return self.eliminate_with_idx(val, fill_candidates)
+            return self.eliminate_with_idx(val, fill_candidates);
         }
 
         for i in 0..self.len() {
@@ -226,11 +237,9 @@ impl NodeArray {
             if self[i].available_colors.count() != 1 {
                 continue;
             }
-            self[i].color = self[i]
-                .available_colors
-                .get_unique()
-                .unwrap();
-            if let Some(impossible_node_idx) = self.eliminate_with_idx(i, &mut new_fill_candidates) {
+            self[i].color = self[i].available_colors.get_unique().unwrap();
+            if let Some(impossible_node_idx) = self.eliminate_with_idx(i, &mut new_fill_candidates)
+            {
                 return FillResult::Fail(impossible_node_idx);
             }
             cnt += 1;
@@ -257,7 +266,7 @@ impl NodeArray {
         if self.uncolored_node_count() == 0 {
             return Some(SolveResult::Unique(self.create_color_array()));
         }
-        return None
+        return None;
     }
 
     fn create_color_array(&self) -> ColorArray {
@@ -269,6 +278,7 @@ impl NodeArray {
     }
 
     #[inline(never)]
+    // Check if the current board is valid. This is useful in debugging.
     fn find_invalid_cell(&self) -> Option<NodeIndexType> {
         for i in 0..NODE_COUNT {
             for j in NEIGHBOR_ARRAY_MAP[i] {
@@ -284,19 +294,7 @@ impl NodeArray {
     }
 
     // Returns the index of an uncolored node for backtracing.
-    #[inline(never)]
-    fn pick_up_uncolored_node(&self) -> Option<NodeIndexType> {
-        let mut pairs = (0..NODE_COUNT)
-            .filter(|i| self[*i].color == 0)
-            .map(|i| (i, self[i].available_colors.count()))
-            .collect::<Vec<_>>();
-        if pairs.len() == 0 {
-            return None;
-        }
-        pairs.sort_by_key(|x| x.1);
-        return Some(pairs[0].0);
-    }
-
+    // Returns the one with the least number of available colors.
     fn pick_up_uncolored_node_fast(&self) -> Option<NodeIndexType> {
         let mut min_colors = COLOR_COUNT;
         let mut min_idx = None;
@@ -351,9 +349,7 @@ fn solve_with_backtracing(node_arr: NodeArray, hint_answer: Option<&ColorArray>)
             .eliminate_and_fill(Some(idx))
             .unwrap_or_else(|| solve_with_backtracing(node_arr_copy, hint_answer));
         match result {
-            SolveResult::Invalid => {
-
-                continue},
+            SolveResult::Invalid => continue,
             SolveResult::Unique(answer) => {
                 answers.push(answer);
             }
