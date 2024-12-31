@@ -59,14 +59,21 @@ impl Colors {
         return ret;
     }
 
-    fn get_all(&self) -> Vec<u8> {
-        let mut ret = vec![];
+    fn get_all_no_allocate(&self, output_buffer: &mut [u8;COLOR_COUNT]) -> usize {
+        let mut ret = 0;
         for i in 1..COLOR_COUNT + 1 {
             if self.arr[i] {
-                ret.push(i as u8);
+                output_buffer[ret] = i as u8;
+                ret += 1;
             }
         }
         return ret;
+    }
+
+    fn get_all(&self) -> Vec<u8> {
+        let mut buffer = [0; COLOR_COUNT];
+        let cnt = self.get_all_no_allocate(&mut buffer);
+        return buffer[0..cnt].to_vec();
     }
 }
 
@@ -340,8 +347,9 @@ fn solve_with_backtracing(node_arr: NodeArray, hint_answer: Option<&ColorArray>)
     // println!("{}\n", node_arr.uncolored_node_count());
     let idx = node_arr.pick_up_uncolored_node_fast().unwrap();
     let mut answers = vec![];
-    let colors = node_arr[idx].available_colors.get_all();
-    for c in colors {
+    let mut colors_buf = [0;COLOR_COUNT];
+    let colors_cnt = node_arr[idx].available_colors.get_all_no_allocate(&mut colors_buf);
+    for &c in &colors_buf[0..colors_cnt] {
         let mut node_arr_copy = node_arr;
         node_arr_copy[idx].color = c;
         // println!("filling {} to {}\n", c, idx);
