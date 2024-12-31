@@ -229,7 +229,7 @@ impl NodeArray {
             self[i].color = self[i]
                 .available_colors
                 .get_unique()
-                .expect("Invalid state");
+                .unwrap();
             if let Some(impossible_node_idx) = self.eliminate_with_idx(i, &mut new_fill_candidates) {
                 return FillResult::Fail(impossible_node_idx);
             }
@@ -296,6 +296,22 @@ impl NodeArray {
         pairs.sort_by_key(|x| x.1);
         return Some(pairs[0].0);
     }
+
+    fn pick_up_uncolored_node_fast(&self) -> Option<NodeIndexType> {
+        let mut min_colors = COLOR_COUNT;
+        let mut min_idx = None;
+        for i in 0..NODE_COUNT {
+            if self[i].color != 0 {
+                continue;
+            }
+            let cnt = self[i].available_colors.count();
+            if cnt < min_colors {
+                min_colors = cnt;
+                min_idx = Some(i);
+            }
+        }
+        return min_idx;
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -324,7 +340,7 @@ pub fn fast_solve_with_hint(puzzle: &ColorArray, hint_answer: Option<&ColorArray
 
 fn solve_with_backtracing(node_arr: NodeArray, hint_answer: Option<&ColorArray>) -> SolveResult {
     // println!("{}\n", node_arr.uncolored_node_count());
-    let idx = node_arr.pick_up_uncolored_node().expect("Invalid state");
+    let idx = node_arr.pick_up_uncolored_node_fast().unwrap();
     let mut answers = vec![];
     let colors = node_arr[idx].available_colors.get_all();
     for c in colors {
