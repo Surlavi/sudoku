@@ -103,8 +103,6 @@ export class GameController {
   }
 
   private refreshBanner(once = false) {
-    console.log('called');
-
     const timerDom = document.getElementById('value-timer')!;
     const mistakesDom = document.getElementById('value-mistakes')!;
     const remainingDom = document.getElementById('value-remaining')!;
@@ -115,7 +113,9 @@ export class GameController {
 
     // TODO: Add stop condition.
     if (!once) {
-      setTimeout(this.refreshBanner, 1000);
+      setTimeout(() => {
+        this.refreshBanner();
+      }, 1000);
     }
   }
 }
