@@ -135,23 +135,21 @@ function secondsToHumanReadable(seconds: number): string {
 }
 
 async function main() {
-  try {
-    await init().then(() => {
-      wasm.init_panic_hook();
-      console.log('wasm loaded');
-      const arr = new Uint8Array([
-        4, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 0, 0, 0, 0, 5, 0, 0, 9, 0, 0, 8, 0, 0, 0, 0, 6, 0, 0, 0, 7, 0,
-        2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 7, 0, 0, 5, 0, 3, 0, 0, 0, 0, 4, 0,
-        9, 0, 0, 0, 0, 0, 0, 0, 0,
-      ]);
-      console.log(wasm.fast_resolve(arr));
-      console.log(arr);
-      startUi();
-    });
-  } catch (error) {
+  await init().catch(error => {
     console.error('Error initializing WASM module:', error);
-  }
+  });
+
+  wasm.init_panic_hook();
+  console.log('wasm loaded');
+  const arr = new Uint8Array([
+    4, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0, 0, 5, 0, 0, 9, 0, 0, 8, 0, 0, 0, 0, 6, 0, 0, 0, 7, 0, 2, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 7, 0, 0, 5, 0, 3, 0, 0, 0, 0, 4, 0, 9, 0, 0,
+    0, 0, 0, 0, 0, 0,
+  ]);
+  console.log(wasm.fast_resolve(arr));
+  console.log(arr);
+  startUi();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
