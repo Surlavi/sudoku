@@ -94,6 +94,7 @@ class VirtualKeyboard {
       const key = document.createElement('div');
       key.classList.add('key');
       key.textContent = `${i}`;
+      key.dataset[`value`] = `${i}`;
       key.addEventListener('click', ev => {
         ev.preventDefault();
         this.cb(i, keyboardDraftModeSwitch.checked);
@@ -109,6 +110,7 @@ class VirtualKeyboard {
   }
 
   show(boardUi: BoardUi, coord: Coordinates) {
+    // Calculate the location.
     const w = this.width;
     const h = this.height;
 
@@ -124,8 +126,21 @@ class VirtualKeyboard {
     this.container.style.left = `${x}px`;
     this.container.style.top = `${y}px`;
 
-    this.container.style.display = 'block';
+    // Hide unavailable numbers.
+    const availableNumbers = boardUi.gameBoard.getAvailableNumbersForCell(coord);
+    const keyboard = document.getElementById('keyboard')!;
+    keyboard.childNodes.forEach(node => {
+      let dom = node as HTMLElement;
+      let value = parseInt(dom.dataset['value']!);
+      if (availableNumbers.has(value)) {
+        dom.style.opacity = '1';
+      } else {
+        dom.style.opacity = '0';
+      }
+    });
 
+    // Show it.
+    this.container.style.display = 'block';
     console.log('display virtual keyboard at (%d, %d)', x, y);
   }
 
@@ -139,7 +154,7 @@ export class BoardUi {
   config!: Config;
   private readonly container: HTMLElement;
 
-  private gameBoard: ResolvingBoard;
+  gameBoard: ResolvingBoard;
 
   private readonly virtualKeyboard: VirtualKeyboard;
 

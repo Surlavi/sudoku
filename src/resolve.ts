@@ -26,6 +26,27 @@ export class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
     ).length;
   }
 
+  getAvailableNumbersForCell(coord: types.Coordinates) : ReadonlySet<number> {
+    const cell = this.cells[coord.linearIndex];
+    if (cell.hasNumber()) {
+      return new Set();
+    }
+
+    let neighColors= new Set<number>();
+    this.getCellsByNeighborToCoord(coord).forEach(x => {
+      if (x.value) {
+        neighColors.add(x.value);
+      }
+    });
+    let ret = new Set<number>();
+    for (let i = 1 ; i <= 9; ++i) {
+      if (!neighColors.has(i)) {
+        ret.add(i);
+      }
+    }
+    return ret;
+  }
+
   takeAction(action: Action) {
     console.log(actionToString(action));
     const cell = this.getCellByCoord(action.coordinate);
