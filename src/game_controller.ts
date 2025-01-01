@@ -10,6 +10,16 @@ function secondsToHumanReadable(seconds: number): string {
   return `${formattedMinutes}:${formattedSeconds}`;
 }
 
+const HTML_CONTENT = `
+<div id="board-banner">
+  <span style="text-align: left;">Timer:&nbsp;<span id="value-timer">0:00</span>
+  </span><span style="text-align: center;">Mistakes:&nbsp;<span id="value-mistakes">0</span>&nbsp;
+  </span><span style="text-align: right;">Remaining:&nbsp;<span id="value-remaining">0</span>&nbsp;
+  </span>
+</div>
+<div id="board" style="position: relative;">
+</div>`;
+
 export class GameController {
   game: Game;
   pageDom: HTMLElement;
@@ -20,6 +30,7 @@ export class GameController {
     this.pageDom = pageDom;
 
     // FIXME: insert html here.
+    this.pageDom.setHTMLUnsafe(HTML_CONTENT);
 
     const boardDom = document.getElementById('board')!;
     this.boardUi = new BoardUi(boardDom, game.puzzleBoard, {
