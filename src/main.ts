@@ -5,20 +5,20 @@ import {GenericBoard} from './types.js';
 import {Game} from './game.js';
 
 function startUi() {
-  const welcomeScreen = document.getElementById('welcome');
-  if (welcomeScreen === null) {
+  const welcomePageDom = document.getElementById('welcome-page');
+  if (welcomePageDom === null) {
     console.error('failed to load welcome screen');
     return;
   }
 
-  const appContainerDomNode = document.getElementById('app-container');
-  const appDomNode = document.getElementById('app');
+  const appContainerDom = document.getElementById('app-container');
+  const gamePageDom = document.getElementById('game-page');
 
-  appDomNode!.style.height = `${appContainerDomNode!.clientHeight}px`;
-  console.log('setting height to %d', appContainerDomNode!.clientHeight);
+  gamePageDom!.style.height = `${appContainerDom!.clientHeight}px`;
+  console.log('setting height to %d', appContainerDom!.clientHeight);
 
-  const boardDomNode = document.getElementById('board');
-  if (boardDomNode === null) {
+  const boardDom = document.getElementById('board');
+  if (boardDom === null) {
     console.log('Failed to find the dom node');
     return;
   }
@@ -27,7 +27,7 @@ function startUi() {
   const puzzleArr = new Uint8Array(81);
   wasm.generate(60, puzzleArr);
 
-  welcomeScreen.style.opacity = '0';
+  welcomePageDom.style.opacity = '0';
 
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_resolve(answerArr);
@@ -43,14 +43,14 @@ function startUi() {
     puzzleArr.join('').replaceAll('0', '.'),
   );
   const game = new Game(answer, puzzle);
-  const boardUi = new BoardUi(boardDomNode, game.puzzleBoard, {
-    size: boardDomNode.clientWidth,
+  const boardUi = new BoardUi(boardDom, game.puzzleBoard, {
+    size: boardDom.clientWidth,
     highlightCursorNeighbors: true,
     highlightNumber: true,
     highlightNumberNeighbors: true,
   });
 
-  appDomNode!.style.opacity = '1';
+  gamePageDom!.style.opacity = '1';
 
   function refreshBanner(once = false) {
     console.log('called');
@@ -135,10 +135,10 @@ function secondsToHumanReadable(seconds: number): string {
 }
 
 async function main() {
-  console.log('called');
   try {
     await init().then(() => {
-      console.log('loaded');
+      wasm.init_panic_hook();
+      console.log('wasm loaded');
       const arr = new Uint8Array([
         4, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 0, 0, 0, 5, 0, 0, 9, 0, 0, 8, 0, 0, 0, 0, 6, 0, 0, 0, 7, 0,
@@ -147,7 +147,6 @@ async function main() {
       ]);
       console.log(wasm.fast_resolve(arr));
       console.log(arr);
-      wasm.init_panic_hook();
       startUi();
     });
   } catch (error) {

@@ -23,7 +23,7 @@ body {
   }
 }
 
-#welcome {
+#welcome-page {
   width: 100%;
   position: absolute;
   display: flex; 
@@ -33,24 +33,24 @@ body {
   font-size: 3em;
 }
 
-#app {
+#game-page {
   position: relative;
+  >div {
+    width: 100%;
+  }
+
+  #board-banner {
+    margin: 40px 5px 5px;
+    position: relative;
+    width: 100%;
+  }
+
+  #board-banner>span {
+    display: inline-block;
+    width: 33%;
+  }
 }
 
-#app>div {
-  width: 100%;
-}
-
-#board-banner {
-  margin: 40px 5px 5px;
-  position: relative;
-  width: 100%;
-}
-
-#board-banner>span {
-  display: inline-block;
-  width: 33%;
-}
 
 .fading {
   transition: opacity 0.5s ease-in-out;
