@@ -5,18 +5,8 @@ import {GameController} from './game_controller.js';
 import {Game} from './game.js';
 
 function startUi() {
-  const welcomePageDom = document.getElementById('welcome-page');
-  if (welcomePageDom === null) {
-    console.error('failed to load welcome screen');
-    return;
-  }
-
-  const appContainerDom = document.getElementById('app-container');
+  const welcomePageDom = document.getElementById('welcome-page')!;
   const gamePageDom = document.getElementById('game-page')!;
-
-  // FIXME: remove this?
-  gamePageDom!.style.height = `${appContainerDom!.clientHeight}px`;
-  console.log('setting height to %d', appContainerDom!.clientHeight);
 
   // Create a random game.
   const puzzleArr = new Uint8Array(81);
