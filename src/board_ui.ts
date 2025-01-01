@@ -94,14 +94,13 @@ class VirtualKeyboard {
       const key = document.createElement('div');
       key.classList.add('key');
       key.textContent = `${i}`;
-      key.dataset[`value`] = `${i}`;
+      key.dataset['value'] = `${i}`;
       key.addEventListener('click', ev => {
         ev.preventDefault();
         this.cb(i, keyboardDraftModeSwitch.checked);
       });
       keyboard.appendChild(key);
     }
-
 
     this.width = this.container.clientWidth;
     this.height = this.container.clientHeight;
@@ -120,18 +119,19 @@ class VirtualKeyboard {
 
     const MARGIN = 3;
 
-    const x = (x1 - w - MARGIN > 0) ? (x1 - w - MARGIN) : (x2 + MARGIN);
-    const y = (y1 + h < boardUi.config.size) ? (y1 + 40) : (boardUi.config.size - h);
+    const x = x1 - w - MARGIN > 0 ? x1 - w - MARGIN : x2 + MARGIN;
+    const y = y1 + h < boardUi.config.size ? y1 + 40 : boardUi.config.size - h;
 
     this.container.style.left = `${x}px`;
     this.container.style.top = `${y}px`;
 
     // Hide unavailable numbers.
-    const availableNumbers = boardUi.gameBoard.getAvailableNumbersForCell(coord);
+    const availableNumbers =
+      boardUi.gameBoard.getAvailableNumbersForCell(coord);
     const keyboard = document.getElementById('keyboard')!;
     keyboard.childNodes.forEach(node => {
-      let dom = node as HTMLElement;
-      let value = parseInt(dom.dataset['value']!);
+      const dom = node as HTMLElement;
+      const value = parseInt(dom.dataset['value']!);
       if (availableNumbers.has(value)) {
         dom.style.opacity = '1';
       } else {
