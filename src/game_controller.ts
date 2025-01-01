@@ -10,6 +10,21 @@ function secondsToHumanReadable(seconds: number): string {
   return `${formattedMinutes}:${formattedSeconds}`;
 }
 
+function keyCodeToDirection(code: string): MoveDirection {
+  switch (code) {
+    case 'ArrowUp':
+      return MoveDirection.UP;
+    case 'ArrowDown':
+      return MoveDirection.DOWN;
+    case 'ArrowLeft':
+      return MoveDirection.LEFT;
+    case 'ArrowRight':
+      return MoveDirection.RIGHT;
+    default:
+      throw new Error("Unreachable");
+  }
+}
+
 const HTML_CONTENT = `
 <div id="board-banner">
   <span style="text-align: left;">Timer:&nbsp;<span id="value-timer">0:00</span>
@@ -43,25 +58,15 @@ export class GameController {
     this.refreshBanner();
   }
 
-  handleKeyDownEvent(ev: KeyboardEvent) {
-    let direction: MoveDirection | null = null;
-    let value: number | null = null;
-
+  handleKeyDownEvent(ev: KeyboardEvent): boolean {
     console.log(ev);
-
     switch (ev.code) {
       case 'ArrowUp':
-        direction = MoveDirection.UP;
-        break;
       case 'ArrowDown':
-        direction = MoveDirection.DOWN;
-        break;
       case 'ArrowLeft':
-        direction = MoveDirection.LEFT;
-        break;
       case 'ArrowRight':
-        direction = MoveDirection.RIGHT;
-        break;
+        this.boardUi.moveCursor(keyCodeToDirection(ev.code));
+        return true;
       case 'Digit1':
       case 'Digit2':
       case 'Digit3':
@@ -71,21 +76,21 @@ export class GameController {
       case 'Digit7':
       case 'Digit8':
       case 'Digit9':
-        value = parseInt(ev.code.charAt(5));
-        break;
+        this.handleDigitKeyEvent(ev);
+        return true;
       case 'KeyD':
         this.game.recalculateDraftNumbers();
         this.boardUi.updateBoard();
-        break;
+        return true;
       default:
         // Do nothing now.
-        break;
+        return false;
     }
-    if (direction !== null) {
-      this.boardUi.moveCursor(direction);
-      ev.preventDefault();
-    }
-    if (value !== null && this.boardUi.cursorCoord !== null) {
+  }
+
+  private handleDigitKeyEvent(ev: KeyboardEvent) {
+    const value = parseInt(ev.code.charAt(5));
+    if (this.boardUi.cursorCoord !== null) {
       console.log('hit %d', value);
       if (ev.shiftKey) {
         this.game.fillInNumber(this.boardUi.cursorCoord, value);
@@ -97,7 +102,7 @@ export class GameController {
     }
   }
 
-  refreshBanner(once = false) {
+  private refreshBanner(once = false) {
     console.log('called');
 
     const timerDom = document.getElementById('value-timer')!;

@@ -54,7 +54,9 @@ async function main() {
 
   // We can add logic to remove this listener when necessary in the future.
   window.addEventListener('keydown', ev => {
-    controller.handleKeyDownEvent(ev);
+    if (controller.handleKeyDownEvent(ev)) {
+      ev.preventDefault();
+    }
   });
 
   // Show the game page.
