@@ -29,7 +29,7 @@ export class GameController {
     this.game = game;
     this.pageDom = pageDom;
 
-    // FIXME: insert html here.
+    // Update internal html.
     this.pageDom.setHTMLUnsafe(HTML_CONTENT);
 
     const boardDom = document.getElementById('board')!;

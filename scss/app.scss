@@ -14,6 +14,13 @@ body {
   box-sizing: border-box; /* Include padding and border in element's total width and height */
   flex: 1 0 auto; /* Prevent content from shrinking */
   position: relative;
+
+  >div.page {
+    opacity: 0;
+    &.visible {
+      opacity: 1;
+    }
+  }
 }
 
 /* Styles for smaller screens (phones) */
