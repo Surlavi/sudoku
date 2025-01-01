@@ -97,6 +97,7 @@ class VirtualKeyboard {
       key.dataset['value'] = `${i}`;
       key.addEventListener('click', ev => {
         ev.preventDefault();
+        if (key.classList.contains('disabled')) return;
         this.cb(i, keyboardDraftModeSwitch.checked);
       });
       keyboard.appendChild(key);
@@ -133,20 +134,22 @@ class VirtualKeyboard {
       const dom = node as HTMLElement;
       const value = parseInt(dom.dataset['value']!);
       if (availableNumbers.has(value)) {
-        dom.style.opacity = '1';
+        dom.classList.add('enabled');
+        dom.classList.remove('disabled');
       } else {
-        dom.style.opacity = '0';
+        dom.classList.add('disabled');
+        dom.classList.remove('enabled');
       }
     });
 
     // Show it.
-    this.container.style.display = 'block';
+    this.container.classList.remove('hidden');
     console.log('display virtual keyboard at (%d, %d)', x, y);
   }
 
   hide(animation = false) {
     console.log('hide virtual keyboard');
-    this.container.style.display = 'none';
+    this.container.classList.add('hidden');
   }
 }
 
@@ -286,6 +289,7 @@ export class BoardUi {
 
   moveCursor(d: MoveDirection) {
     if (!this.cursorCoord) return;
+    this.virtualKeyboard.hide();
     let x = this.cursorCoord.x;
     let y = this.cursorCoord.y;
     switch (d) {

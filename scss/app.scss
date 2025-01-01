@@ -30,6 +30,10 @@ body {
   }
 }
 
+.hidden {
+  display: none;
+}
+
 #welcome-page {
   width: 100%;
   position: absolute;
@@ -83,17 +87,24 @@ body {
       border: 1px solid #ccc;
       padding: 8px;
       border-radius: 5px;
-      cursor: pointer;
       user-select: none;
       background-color: #f0f0f0;
       transition: background-color 0.2s ease;
     }
+
+    .key.enabled {
+      cursor: pointer;
+    }
+
+    .key.disabled {
+      opacity: 0.3;
+    }
     
-    .key:hover {
+    .key.enabled:hover {
       background-color: #e0e0e0;
     }
     
-    .key:active {
+    .key.enabled:active {
       background-color: #d0d0d0;
     }
     
