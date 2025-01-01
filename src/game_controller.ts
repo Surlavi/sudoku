@@ -1,6 +1,5 @@
-import { BoardUi,MoveDirection } from "./board_ui.js";
-import { Game } from "./game.js";
-
+import {BoardUi, MoveDirection} from './board_ui.js';
+import {Game} from './game.js';
 
 function secondsToHumanReadable(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -21,7 +20,7 @@ function keyCodeToDirection(code: string): MoveDirection {
     case 'ArrowRight':
       return MoveDirection.RIGHT;
     default:
-      throw new Error("Unreachable");
+      throw new Error('Unreachable');
   }
 }
 
@@ -32,7 +31,16 @@ const HTML_CONTENT = `
   </span><span style="text-align: right;">Remaining:&nbsp;<span id="value-remaining">0</span>&nbsp;
   </span>
 </div>
-<div id="board" style="position: relative;">
+<div id="board" style="position: relative;"></div>
+<div id="num-keyboard">
+  <div>
+    <label class="switch">
+      <input type="checkbox" id="kb-draft-mode-switch" checked="true">
+      <span class="slider"></span>
+    </label>
+    <span>Draft mode</span>
+  </div>
+  <div div class="keyboard" id="keyboard"></div>
 </div>`;
 
 export class GameController {
@@ -48,12 +56,19 @@ export class GameController {
     this.pageDom.setHTMLUnsafe(HTML_CONTENT);
 
     const boardDom = document.getElementById('board')!;
-    this.boardUi = new BoardUi(boardDom, game.puzzleBoard, {
-      size: boardDom.clientWidth,
-      highlightCursorNeighbors: true,
-      highlightNumber: true,
-      highlightNumberNeighbors: true,
-    });
+    const keyboardDom = document.getElementById('num-keyboard')!;
+    this.boardUi = new BoardUi(
+      boardDom,
+      game.puzzleBoard,
+      keyboardDom,
+      this.handleVirtualKeyboardClickEvent.bind(this),
+      {
+        size: boardDom.clientWidth,
+        highlightCursorNeighbors: true,
+        highlightNumber: true,
+        highlightNumberNeighbors: true,
+      },
+    );
 
     this.refreshBanner();
   }
@@ -91,15 +106,22 @@ export class GameController {
   private handleDigitKeyEvent(ev: KeyboardEvent) {
     const value = parseInt(ev.code.charAt(5));
     if (this.boardUi.cursorCoord !== null) {
-      console.log('hit %d', value);
-      if (ev.shiftKey) {
-        this.game.fillInNumber(this.boardUi.cursorCoord, value);
-      } else {
-        this.game.toggleDraftNumber(this.boardUi.cursorCoord, value);
-      }
-      this.boardUi.updateBoard();
-      this.refreshBanner(true);
+      this.handleVirtualKeyboardClickEvent(value, !ev.shiftKey);
     }
+  }
+
+  private handleVirtualKeyboardClickEvent(value: number, draftMode: boolean) {
+    if (this.boardUi.cursorCoord === null) {
+      return;
+    }
+    console.log('hit %d', value);
+    if (!draftMode) {
+      this.game.fillInNumber(this.boardUi.cursorCoord, value);
+    } else {
+      this.game.toggleDraftNumber(this.boardUi.cursorCoord, value);
+    }
+    this.boardUi.updateBoard();
+    this.refreshBanner(true);
   }
 
   private refreshBanner(once = false) {

@@ -62,11 +62,86 @@ export interface Config {
   highlightNumberNeighbors: boolean;
 }
 
+const VIRTUAL_KB_HTML = `
+<div>
+  <label class="switch">
+    <input type="checkbox" id="kb-draft-mode-switch" checked="true">
+    <span class="slider"></span>
+  </label>
+  <span>Draft mode</span>
+</div>
+<div div class="keyboard" id="keyboard"></div>
+`;
+
+type KeyInputCallback = (value: number, draftMode: boolean) => void;
+class VirtualKeyboard {
+  private readonly cb: KeyInputCallback;
+  private readonly container: HTMLElement;
+
+  private width: number;
+  private height: number;
+
+  constructor(container: HTMLElement, keyInputCallback: KeyInputCallback) {
+    this.container = container;
+    container.setHTMLUnsafe(VIRTUAL_KB_HTML);
+    this.cb = keyInputCallback;
+
+    const keyboard = document.getElementById('keyboard')!;
+    const keyboardDraftModeSwitch = document.getElementById(
+      'kb-draft-mode-switch',
+    ) as HTMLInputElement;
+    for (let i = 1; i <= 9; i++) {
+      const key = document.createElement('div');
+      key.classList.add('key');
+      key.textContent = `${i}`;
+      key.addEventListener('click', ev => {
+        ev.preventDefault();
+        this.cb(i, keyboardDraftModeSwitch.checked);
+      });
+      keyboard.appendChild(key);
+    }
+
+
+    this.width = this.container.clientWidth;
+    this.height = this.container.clientHeight;
+
+    this.hide();
+  }
+
+  show(boardUi: BoardUi, coord: Coordinates) {
+    const w = this.width;
+    const h = this.height;
+
+    const x1 = boardUi.getCanvasPosForIdx(coord.x);
+    const x2 = boardUi.getCanvasPosForIdx(coord.x + 1);
+    const y1 = boardUi.getCanvasPosForIdx(coord.y);
+
+    const MARGIN = 3;
+
+    const x = (x1 - w - MARGIN > 0) ? (x1 - w - MARGIN) : (x2 + MARGIN);
+    const y = (y1 + h < boardUi.config.size) ? (y1 + 40) : (boardUi.config.size - h);
+
+    this.container.style.left = `${x}px`;
+    this.container.style.top = `${y}px`;
+
+    this.container.style.display = 'block';
+
+    console.log('display virtual keyboard at (%d, %d)', x, y);
+  }
+
+  hide(animation = false) {
+    console.log('hide virtual keyboard');
+    this.container.style.display = 'none';
+  }
+}
+
 export class BoardUi {
-  private config!: Config;
+  config!: Config;
   private readonly container: HTMLElement;
 
   private gameBoard: ResolvingBoard;
+
+  private readonly virtualKeyboard: VirtualKeyboard;
 
   private gridCanvas!: HTMLCanvasElement;
   private neighHighlightCanvas!: HTMLCanvasElement;
@@ -85,10 +160,22 @@ export class BoardUi {
   constructor(
     container: HTMLElement,
     gameBoard: ResolvingBoard,
+    virtualKeyboardContainer: HTMLElement,
+    digitInputCallback: KeyInputCallback,
     config: Config,
   ) {
     this.container = container;
     this.gameBoard = gameBoard;
+    this.virtualKeyboard = new VirtualKeyboard(
+      virtualKeyboardContainer,
+      (v, b) => {
+        // Do not hide in draft mode.
+        if (!b) {
+          this.virtualKeyboard.hide();
+        }
+        digitInputCallback(v, b);
+      },
+    );
     this.updateConfig(config);
   }
 
@@ -100,7 +187,7 @@ export class BoardUi {
     return (this.config.size - CANVAS_MARGIN * 2) / 9;
   }
 
-  private getCanvasPosForIdx(index: number): number {
+  getCanvasPosForIdx(index: number): number {
     return CANVAS_MARGIN + this.getCellSize() * index;
   }
 
@@ -139,6 +226,7 @@ export class BoardUi {
     this.redrawGrid();
     this.redrawNumbers();
     this.clickCanvas.addEventListener('click', (ev: MouseEvent) => {
+      this.virtualKeyboard.hide();
       const rect = this.clickCanvas.getBoundingClientRect();
       const x = this.getIdxForCanvasPos(ev.clientX - rect.left);
       const y = this.getIdxForCanvasPos(ev.clientY - rect.top);
@@ -146,7 +234,13 @@ export class BoardUi {
       if (x === null || y === null) {
         this.updateCursor(null);
       } else {
-        this.updateCursor(new Coordinates(x, y));
+        const coord = new Coordinates(x, y);
+        this.updateCursor(coord);
+
+        // If the cell is empty, show keyboard.
+        if (this.gameBoard.getCellByCoord(coord).value === null) {
+          this.virtualKeyboard.show(this, coord);
+        }
       }
     });
     this.clickCanvas.addEventListener('dblclick', (ev: MouseEvent) => {

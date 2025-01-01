@@ -4,7 +4,7 @@ import {GenericBoard} from './types.js';
 import {GameController} from './game_controller.js';
 import {Game} from './game.js';
 
-function switchPage(from: HTMLElement|null, to: HTMLElement) {
+function switchPage(from: HTMLElement | null, to: HTMLElement) {
   if (from !== null) {
     from.classList.remove('visible');
   }
