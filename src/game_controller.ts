@@ -32,6 +32,9 @@ const HTML_CONTENT = `
   </span>
 </div>
 <div id="board" style="position: relative;"></div>
+<div id="board-buttons">
+  <span class="btn-default enabled" id="btn-quick-draft">Quick Draft</span>
+</div> 
 <div id="num-keyboard"></div>`;
 
 export class GameController {
@@ -62,6 +65,14 @@ export class GameController {
     );
 
     this.refreshBanner();
+
+    // Button functions.
+    const quickDraftBtn = document.getElementById('btn-quick-draft');
+    quickDraftBtn?.addEventListener('click', ev => {
+      ev.stopPropagation();
+      this.game.recalculateDraftNumbers();
+      this.boardUi.updateBoard();
+    });
   }
 
   handleKeyDownEvent(ev: KeyboardEvent): boolean {

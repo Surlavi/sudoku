@@ -48,6 +48,41 @@ body {
   font-size: 3em;
 }
 
+.btn-default {
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 5px;
+  user-select: none;
+  background-color: #f0f0f0;
+  transition: 
+    background-color 0.2s ease, 
+    color 0.2s ease, 
+    border-color 0.2s ease;
+
+  &.highlight {
+    color: var(--color-highlight-fg);
+    border-color: var(--color-highlight-fg);
+  }
+
+  &.enabled {
+    cursor: pointer;
+  }
+
+  &.disabled {
+    opacity: 0.3;
+  }
+  
+  &.enabled:hover {
+    background-color: #e0e0e0;
+  }
+  
+  &.enabled:active {
+    background-color: #d0d0d0;
+  }
+}
+
 #game-page {
   position: relative;
   >div {
@@ -95,38 +130,8 @@ body {
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid #ccc;
-      padding: 8px;
-      border-radius: 5px;
-      user-select: none;
-      background-color: #f0f0f0;
-      transition: 
-        background-color 0.2s ease, 
-        color 0.2s ease, 
-        border-color 0.2s ease;
     }
 
-    .key.highlight {
-      color: var(--color-highlight-fg);
-      border-color: var(--color-highlight-fg);
-    }
-
-    .key.enabled {
-      cursor: pointer;
-    }
-
-    .key.disabled {
-      opacity: 0.3;
-    }
-    
-    .key.enabled:hover {
-      background-color: #e0e0e0;
-    }
-    
-    .key.enabled:active {
-      background-color: #d0d0d0;
-    }
-    
     .switch-container {
         margin-top: 20px;
         display: flex;
@@ -189,6 +194,17 @@ body {
     }
     .switch-label{
         margin-right: 10px;
+    }
+  }
+
+  #board-buttons {
+    margin: 4px;
+    padding: 20px 0;
+    text-align: center;
+
+    &>span {
+      padding: 12px;
+      display: inline-block;
     }
   }
 }

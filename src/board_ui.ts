@@ -93,6 +93,7 @@ class VirtualKeyboard {
     for (let i = 1; i <= 9; i++) {
       const key = document.createElement('div');
       key.classList.add('key');
+      key.classList.add('btn-default');
       key.textContent = `${i}`;
       key.dataset['value'] = `${i}`;
       key.addEventListener('click', ev => {
@@ -219,6 +220,7 @@ export class BoardUi {
       },
     );
     this.updateConfig(config);
+    container.style.height = `${container.clientWidth}px`;
   }
 
   private getTheme(): theme.Theme {
