@@ -218,3 +218,9 @@ body {
 .fading-fast {
   transition: opacity 0.2s ease-in-out;
 }
+
+#build-info {
+  text-align: right;
+  padding-right: 16px;
+  color: lightgray;
+}
