@@ -31,6 +31,10 @@ export class Game {
 
     cell.fillNumber(value);
 
+    // Remove all unavailable draft numbers.
+    const actions = eliminatePossibleStates(this.puzzleBoard);
+    this.puzzleBoard.takeActions(actions);
+
     if (this.isAllCorrect()) {
       this.endTime = performance.now();
       alert('Congratulations!!!');
