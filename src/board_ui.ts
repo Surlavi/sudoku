@@ -133,7 +133,19 @@ class VirtualKeyboard {
     this.container.style.left = `${x}px`;
     this.container.style.top = `${y}px`;
 
+    this.refreshNumbers(boardUi, coord);
+
+    // Show it.
+    const c = this.container;
+    c.classList.add('fading-fast');
+    c.classList.remove('hidden');
+    c.style.opacity = '1';
+    console.log('display virtual keyboard at (%d, %d)', x, y);
+  }
+
+  refreshNumbers(boardUi: BoardUi, coord: Coordinates) {
     // Hide unavailable numbers.
+    const draftNumbers = boardUi.gameBoard.getCellByCoord(coord).draftNumbers;
     const availableNumbers =
       boardUi.gameBoard.getAvailableNumbersForCell(coord);
     const keyboard = document.getElementById('keyboard')!;
@@ -147,16 +159,18 @@ class VirtualKeyboard {
         dom.classList.add('disabled');
         dom.classList.remove('enabled');
       }
+      if (draftNumbers.has(value)) {
+        dom.classList.add('highlight');
+      } else {
+        dom.classList.remove('highlight');
+      }
     });
-
-    // Show it.
-    this.container.classList.remove('hidden');
-    console.log('display virtual keyboard at (%d, %d)', x, y);
   }
 
   hide(animation = false) {
     console.log('hide virtual keyboard');
     this.container.classList.add('hidden');
+    this.container.style.opacity = '0';
   }
 }
 
@@ -199,6 +213,9 @@ export class BoardUi {
           this.virtualKeyboard.hide();
         }
         digitInputCallback(v, b);
+        if (this.cursorCoord) {
+          this.virtualKeyboard.refreshNumbers(this, this.cursorCoord);
+        }
       },
     );
     this.updateConfig(config);

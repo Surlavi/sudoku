@@ -100,7 +100,15 @@ body {
       border-radius: 5px;
       user-select: none;
       background-color: #f0f0f0;
-      transition: background-color 0.2s ease;
+      transition: 
+        background-color 0.2s ease, 
+        color 0.2s ease, 
+        border-color 0.2s ease;
+    }
+
+    .key.highlight {
+      color: var(--color-highlight-fg);
+      border-color: var(--color-highlight-fg);
     }
 
     .key.enabled {
@@ -187,6 +195,10 @@ body {
 
 .fading {
   transition: opacity 0.5s ease-in-out;
+}
+
+.fading-fast {
+  transition: opacity 0.2s ease-in-out;
 }
 
 // So that double click won't select it.

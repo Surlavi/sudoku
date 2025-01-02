@@ -19,8 +19,8 @@
   - `sh publish.sh`
 
 # TODO list
+- Increase default difficulty (make generator more efficient).
 - Helps for keyboard shortcut.
-- Touch screen support.
 - Configuration for new games (difficulty, penalty on mistakes, etc.).
 - UI theme settings.
 - Hint supports.
