@@ -14,10 +14,11 @@ function switchPage(from: HTMLElement | null, to: HTMLElement) {
 async function main() {
   theme.init();
 
+  const gamePageDom = document.getElementById('game-page')!;
   const welcomePageDom = document.getElementById('welcome-page')!;
 
   // Show the welcome page at first.
-  switchPage(null, welcomePageDom);
+  switchPage(gamePageDom, welcomePageDom);
 
   await init().catch(error => {
     console.error('Error initializing WASM module:', error);
@@ -35,8 +36,6 @@ async function main() {
   console.log(arr);
 
   document.body.style.backgroundColor = theme.getCurrentTheme().colorBg;
-
-  const gamePageDom = document.getElementById('game-page')!;
 
   // Create a random game.
   const puzzleArr = new Uint8Array(81);
