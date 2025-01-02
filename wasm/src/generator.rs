@@ -187,7 +187,7 @@ fn generate_puzzle_from_full_impl(
     }
 
     let current_non_empty = count_clues(arr);
-    if current_non_empty == config.target_clues_num {
+    if current_non_empty <= config.target_clues_num {
         return true;
     }
 
@@ -211,13 +211,35 @@ fn generate_puzzle_from_full_impl(
     false
 }
 
+fn drop_number_uniformly(answer: &ColorArray) -> ColorArray {
+    let mut pos = [[0u8;9];9];
+    let mut cnt = [0 as u8; 9];
+    for i in 0..81 {
+        let c = answer[i];
+        pos[c as usize - 1][cnt[c as usize - 1] as usize] = i as u8;
+        cnt[c as usize - 1] += 1;
+    }
+    for i in 0..COLOR_COUNT {
+        pos[i as usize].shuffle(&mut thread_rng())
+    }
+    let mut ret = *answer;
+    for c in 0..COLOR_COUNT {
+        for j in 0..6 {
+            let p = pos[c as usize ][j];
+            ret[p as usize] = 0;
+        }
+    }
+    return ret;
+}
+
 fn generate_sequential(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
     loop {
-        let nodes_to_remove = shuffle_nodes();
-        let mut puzzle = *answer;
-        for i in 0..(NODE_COUNT - config.target_clues_num as usize) {
-            puzzle[nodes_to_remove[i] as usize] = 0;
-        }
+        // let nodes_to_remove = shuffle_nodes();
+        // let mut puzzle = *answer;
+        // for i in 0..(NODE_COUNT - config.target_clues_num as usize) {
+        //     puzzle[nodes_to_remove[i] as usize] = 0;
+        // }
+        let puzzle = drop_number_uniformly(answer);
         match fast_solve(&puzzle, Some(answer)) {
             SolveResult::Invalid => panic!(),
             SolveResult::Multiple(_) => {
@@ -327,14 +349,14 @@ mod tests {
 
     #[test]
     fn test_generate_puzzle_e2e() {
-        for i in 0..2 {
+        for i in 0..5 {
             println!("Iteration {}", i);
             let arr = generate_full();
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
             let puzzle = generate_puzzle_from_full(
                 &arr,
                 GeneratorConfig {
-                    timeout: Some(Duration::from_secs(1)),
+                    timeout: Some(Duration::from_secs(10)),
                     target_clues_num: 17,
                 },
             );
