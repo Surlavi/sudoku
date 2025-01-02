@@ -1,3 +1,5 @@
+@use "palettes.scss";
+
 body {
   margin: 0; /* Remove default body margins */
   font-family: sans-serif; /* Use a default font */
@@ -156,11 +158,11 @@ body {
     }
     
     input:checked + .slider {
-      background-color: #2196F3;
+      background-color: var(--color-highlight-fg);
     }
     
     input:focus + .slider {
-      box-shadow: 0 0 1px #2196F3;
+      box-shadow: 0 0 1px var(--color-highlight-fg);
     }
     
     input:checked + .slider:before {

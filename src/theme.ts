@@ -1,25 +1,25 @@
 export interface Theme {
-  color_prefilled: string;
-  color_resolved: string;
-  color_draft: string;
-  color_highlight_foreground: string;
-  color_highlight_bg1: string;
-  color_highlight_bg2: string;
-  color_background: string;
+  colorPrefilled: string;
+  colorSolved: string;
+  colorDraft: string;
+  colorHighlightFg: string;
+  colorHighlightBg1: string;
+  colorHighlightBg2: string;
+  colorBg: string;
 }
 
-const DEFAULT_THEME: Theme = {
-  color_prefilled: '#050505',
-  color_resolved: '#156363',
-  color_draft: '#447862',
-  color_highlight_foreground: '#007896',
-  color_highlight_bg1: rgba('#dcc1c3', 1),
-  color_highlight_bg2: rgba('#dcd1d1', 0.5),
-  color_background: '#fefefe',
+const CURRENT_THEME: Theme = {
+  colorPrefilled: '#050505',
+  colorSolved: '#156363',
+  colorDraft: '#447862',
+  colorHighlightFg: '#007896',
+  colorHighlightBg1: rgba('#dcc1c3', 1),
+  colorHighlightBg2: rgba('#dcd1d1', 0.5),
+  colorBg: '#fefefe',
 };
 
 export function getCurrentTheme(): Theme {
-  return DEFAULT_THEME;
+  return CURRENT_THEME;
 }
 
 function rgba(hex: string, alpha: number): string {
@@ -28,4 +28,29 @@ function rgba(hex: string, alpha: number): string {
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+const CSS_JS_VAR_MAP: Record<string, string> = {
+  'color-prefilled': 'colorPrefilled',
+  'color-solved': 'colorSolved',
+  'color-draft': 'colorDraft',
+  'color-highlight-fg': 'colorHighlightFg',
+  'color-highlight-bg1': 'colorHighlightBg1',
+  'color-highlight-bg2': 'colorHighlightBg2',
+  'color-bg': 'colorBg',
+} as const;
+
+export function init() {
+  setTheme('default');
+}
+
+function setTheme(name: string) {
+  for (const cssProp in CSS_JS_VAR_MAP) {
+    const jsProp = CSS_JS_VAR_MAP[cssProp];
+    const cssVar = `--${name}-${cssProp}`;
+    const val = window.getComputedStyle(document.body).getPropertyValue(cssVar);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (CURRENT_THEME as any)[jsProp] = val;
+    document.documentElement.style.setProperty(`--${cssProp}`, val);
+  }
 }

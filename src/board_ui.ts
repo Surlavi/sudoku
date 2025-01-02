@@ -366,11 +366,7 @@ export class BoardUi {
       const ctx = getCanvas2DContext(this.neighHighlightCanvas);
       const cells = this.gameBoard.getCellsByNeighborToCoord(cursor);
       for (const cell of cells) {
-        highlightCell(
-          ctx,
-          cell.coordinate,
-          this.getTheme().color_highlight_bg1,
-        );
+        highlightCell(ctx, cell.coordinate, this.getTheme().colorHighlightBg1);
       }
     }
 
@@ -390,11 +386,7 @@ export class BoardUi {
         cells = mergeCellLists(cellArrays);
       }
       for (const cell of cells) {
-        highlightCell(
-          ctx,
-          cell.coordinate,
-          this.getTheme().color_highlight_bg2,
-        );
+        highlightCell(ctx, cell.coordinate, this.getTheme().colorHighlightBg2);
       }
 
       // Also highlight all draft values.
@@ -404,7 +396,7 @@ export class BoardUi {
             ctx,
             cell.coordinate,
             this.focusedNumber,
-            this.getTheme().color_highlight_bg2,
+            this.getTheme().colorHighlightBg2,
           );
         }
       }
@@ -420,9 +412,9 @@ export class BoardUi {
 
     const startPos = this.getCanvasPosForIdx(0);
     const endPos = this.getCanvasPosForIdx(9);
-    const style: LineStyle = {color: this.getTheme().color_prefilled};
+    const style: LineStyle = {color: this.getTheme().colorPrefilled};
     const sqrBorderStyle: LineStyle = {
-      color: this.getTheme().color_prefilled,
+      color: this.getTheme().colorPrefilled,
       width: 3,
     };
     for (let i = 0; i <= 9; i++) {
@@ -472,7 +464,7 @@ export class BoardUi {
           cell.value!,
           cell.coordinate,
           false,
-          this.getTheme().color_prefilled,
+          this.getTheme().colorPrefilled,
         );
       }
       if (cell.state === ResolvingCellState.RESOLVED) {
@@ -480,13 +472,13 @@ export class BoardUi {
           cell.value!,
           cell.coordinate,
           false,
-          this.getTheme().color_resolved,
+          this.getTheme().colorSolved,
         );
       }
       if (cell.state === ResolvingCellState.RESOLVING) {
         for (let i = 1; i <= 9; ++i) {
           if (cell.draftNumbers.has(i)) {
-            drawNumber(i, cell.coordinate, true, this.getTheme().color_draft);
+            drawNumber(i, cell.coordinate, true, this.getTheme().colorDraft);
           }
         }
       }
@@ -509,7 +501,7 @@ export class BoardUi {
     const y1 = this.getCanvasPosForIdx(coord.y);
     const y2 = this.getCanvasPosForIdx(coord.y + 1);
     const style: LineStyle = {
-      color: this.getTheme().color_highlight_foreground,
+      color: this.getTheme().colorHighlightFg,
       width: 3,
     };
     drawLine(ctx, x1, y1, x2, y1, style);

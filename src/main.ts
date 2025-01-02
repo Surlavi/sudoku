@@ -1,5 +1,5 @@
 import init, * as wasm from '../wasm/pkg/sudoku_wasm.js';
-import {getCurrentTheme} from './theme.js';
+import * as theme from './theme.js';
 import {GenericBoard} from './types.js';
 import {GameController} from './game_controller.js';
 import {Game} from './game.js';
@@ -12,6 +12,8 @@ function switchPage(from: HTMLElement | null, to: HTMLElement) {
 }
 
 async function main() {
+  theme.init();
+
   const welcomePageDom = document.getElementById('welcome-page')!;
 
   // Show the welcome page at first.
@@ -32,7 +34,7 @@ async function main() {
   console.log(wasm.fast_resolve(arr));
   console.log(arr);
 
-  document.body.style.backgroundColor = getCurrentTheme().color_background;
+  document.body.style.backgroundColor = theme.getCurrentTheme().colorBg;
 
   const gamePageDom = document.getElementById('game-page')!;
 
