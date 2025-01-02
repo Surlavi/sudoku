@@ -13,7 +13,7 @@ pub use generator::generate_puzzle;
 pub use generator::GeneratorConfig;
 
 fn new_color_array_from_js_type(src: &[u8]) -> Result<ColorArray, JsError> {
-    SudokuArray::try_from(src).map_err(|err| JsError::new(&err.to_string()))
+    ColorArray::try_from(src).map_err(|err| JsError::new(&err.to_string()))
 }
 
 fn fill_color_array_to_js_type(src: &ColorArray, dst: &mut [u8]) {

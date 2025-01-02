@@ -113,20 +113,24 @@ mod neighbor_based {
         available_colors: Colors,
     }
 
-    impl Node {
-        fn new(color: u8) -> Self {
+    impl SudokuValue for Node {
+        fn from_color(number: ColorType) -> Self {
             Self {
-                color,
+                color: number,
                 available_colors: Colors::new(true),
             }
+        }
+    
+        fn to_color(&self) -> ColorType {
+            self.color
         }
     }
 
     #[derive(Clone, Copy)]
-    struct NodeArray(SudokuArray<Node>);
+    struct NodeArray(SudokuArrayType<Node>);
 
     impl Deref for NodeArray {
-        type Target = SudokuArray<Node>;
+        type Target = SudokuArrayType<Node>;
 
         fn deref(&self) -> &Self::Target {
             &self.0
@@ -141,17 +145,13 @@ mod neighbor_based {
 
     impl From<&ColorArray> for NodeArray {
         fn from(value: &ColorArray) -> Self {
-            NodeArray(SudokuArray::new(value.map(Node::new)))
+            NodeArray(value.map(Node::from_color))
         }
     }
 
     impl From<&NodeArray> for ColorArray {
         fn from(val: &NodeArray) -> Self {
-            let mut ret = SudokuArray::new([0; NODE_COUNT]);
-            for (i, node) in val.iter().enumerate() {
-                ret[i] = node.color;
-            }
-            ret
+            val.0.map(|n| n.color)
         }
     }
 
@@ -192,10 +192,6 @@ mod neighbor_based {
     }
 
     impl NodeArray {
-        fn uncolored_node_count(&self) -> usize {
-            self.iter().filter(|n| n.color == 0).count()
-        }
-
         // Returns the impossible node after the elimination.
         #[inline(never)]
         fn eliminate_with_idx(
@@ -291,17 +287,9 @@ mod neighbor_based {
                 }
             }
             if self.uncolored_node_count() == 0 {
-                return Some(SolveResult::Unique(self.create_color_array()));
+                return Some(SolveResult::Unique(self.0.to_color_array()));
             }
             None
-        }
-
-        fn create_color_array(&self) -> ColorArray {
-            let mut ret = SudokuArray::new([0; NODE_COUNT]);
-            for (i, node) in self.iter().enumerate() {
-                ret[i] = node.color;
-            }
-            ret
         }
 
         // Check if the current board is valid. This is useful in debugging.
@@ -394,7 +382,7 @@ mod neighbor_based {
 
         match answers.len() {
             0 => SolveResult::Invalid,
-            1 => SolveResult::Unique(SudokuArray::new(*answers[0])),
+            1 => SolveResult::Unique(answers[0]),
             // Already handled above in the loop.
             _ => panic!("Unexpected multiple answer found"),
         }
@@ -448,8 +436,8 @@ mod tests {
             6, 9, 5, 4, 1, 7, 3, 8, 2, //
         ];
 
-        let result = fast_solve(&ColorArray::new(puzzle), None);
-        assert_eq!(result, SolveResult::Unique(ColorArray::new(answer)));
+        let result = fast_solve(&puzzle, None);
+        assert_eq!(result, SolveResult::Unique(answer));
     }
 
     #[test]
@@ -477,7 +465,7 @@ mod tests {
             9, 2, 7, 3, 4, 5, 1, 8, 6, //
         ];
 
-        let result = fast_solve(&ColorArray::new(puzzle), None);
-        assert_eq!(result, SolveResult::Unique(ColorArray::new(answer)));
+        let result = fast_solve(&puzzle, None);
+        assert_eq!(result, SolveResult::Unique(answer));
     }
 }

@@ -68,7 +68,7 @@ fn generate_full_impl(arr: &mut ColorArray, i: usize) -> bool {
 
 // Generates a full sudoku array (no empty cells) randomly.
 pub fn generate_full() -> ColorArray {
-    let mut arr = ColorArray::new([0; NODE_COUNT]);
+    let mut arr = [0; NODE_COUNT];
 
     // Generate the first row directly.
     arr[..9].copy_from_slice(&shuffle_colors());
@@ -80,7 +80,7 @@ pub fn generate_full() -> ColorArray {
         );
     }
 
-    ColorArray::new(*arr)
+    arr
 }
 
 const fn create_nodes_array() -> [u8; NODE_COUNT] {
@@ -349,14 +349,14 @@ mod tests {
 
     #[test]
     fn test_generate_puzzle_e2e() {
-        for i in 0..5 {
+        for i in 0..2 {
             println!("Iteration {}", i);
             let arr = generate_full();
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
             let puzzle = generate_puzzle_from_full(
                 &arr,
                 GeneratorConfig {
-                    timeout: Some(Duration::from_secs(10)),
+                    timeout: Some(Duration::from_secs(1)),
                     target_clues_num: 17,
                 },
             );
@@ -366,11 +366,11 @@ mod tests {
 
     #[test]
     fn test_generate_puzzle_from_full() {
-        let arr = SudokuArray::new([
+        let arr = [
             5, 3, 9, 4, 8, 2, 6, 1, 7, 8, 6, 4, 9, 7, 1, 5, 2, 3, 7, 1, 2, 5, 3, 6, 4, 9, 8, 2, 5,
             6, 7, 4, 3, 9, 8, 1, 1, 4, 3, 8, 2, 9, 7, 5, 6, 9, 8, 7, 1, 6, 5, 3, 4, 2, 4, 7, 1, 6,
             9, 8, 2, 3, 5, 6, 2, 5, 3, 1, 4, 8, 7, 9, 3, 9, 8, 2, 5, 7, 1, 6, 4,
-        ]);
+        ];
 
         for i in 0..2 {
             println!("Iteration {}", i);

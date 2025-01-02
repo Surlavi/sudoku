@@ -1,44 +1,51 @@
-use std::array::TryFromSliceError;
+use std::usize;
 
-use std::ops::{Deref, DerefMut};
+use rand::seq;
 
 const RANK: usize = 3;
 pub const COLOR_COUNT: usize = RANK * RANK;
 pub const NODE_COUNT: usize = COLOR_COUNT * COLOR_COUNT;
 
-// Number of neighbors per node (8 + 8 + 4).
-const NEIGHBOR_COUNT: usize = 20;
+pub type ColorType = u8;
+pub type NodeIndexType = usize;
+pub type SudokuArrayType<T> = [T; NODE_COUNT];
+pub type ColorArray = SudokuArrayType<ColorType>;
 
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub struct SudokuArray<T>([T; NODE_COUNT]);
+pub trait SudokuValue {
+    fn from_color(number: ColorType) -> Self;
+    fn to_color(&self) -> ColorType;
+}
 
-impl<T> SudokuArray<T> {
-    pub fn new(data: [T; NODE_COUNT]) -> Self {
-        Self(data)
+impl SudokuValue for u8 {
+    #[inline]
+    fn from_color(number: ColorType) -> Self {
+        return number;
+    }
+
+    #[inline]
+    fn to_color(&self) -> ColorType {
+        return *self;
     }
 }
 
-impl<T> Deref for SudokuArray<T> {
-    type Target = [T; NODE_COUNT];
+pub trait SudokuArray<T: SudokuValue + Copy> {
+    fn from_color_array(colors: &ColorArray) -> Self;
+    fn to_color_array(&self) -> ColorArray;
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+    fn uncolored_node_count(&self) -> usize;
 }
 
-impl<T> DerefMut for SudokuArray<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+impl<T> SudokuArray<T> for [T; NODE_COUNT] where T: SudokuValue + Copy {
+    fn from_color_array(colors: &ColorArray) -> Self {
+        colors.map(T::from_color)
     }
-}
 
-impl<T: Copy> TryFrom<&[T]> for SudokuArray<T> {
-    type Error = TryFromSliceError;
-    fn try_from(value: &[T]) -> Result<Self, Self::Error> {
-        match <[T; NODE_COUNT]>::try_from(value) {
-            Ok(arr) => Ok(Self(arr)),
-            Err(err) => Err(err),
-        }
+    fn to_color_array(&self) -> ColorArray {
+        self.map(|x| x.to_color())
+    }
+
+    fn uncolored_node_count(&self) -> usize {
+        self.iter().filter(|n| n.to_color() == 0).count()
     }
 }
 
@@ -53,24 +60,31 @@ pub fn print_sudoku_array<T>(data: &[T; NODE_COUNT], printer: fn(&T) -> String) 
     buffer
 }
 
-pub type NodeIndexType = usize;
-pub type ColorArray = SudokuArray<u8>;
+// Helper functions for calculating index.
+const fn row_idx(idx: usize) -> usize { idx / COLOR_COUNT }
+const fn col_idx(idx: usize) -> usize { idx % COLOR_COUNT }
+const fn sqr_idx(idx: usize) -> usize { row_idx(idx) / RANK * RANK + col_idx(idx) / RANK }
 
+// Number of neighbors per node (8 + 8 + 4).
+const NEIGHBOR_COUNT: usize = 20;
+
+// Neighbors indexes.
 type NeighborArray = [NodeIndexType; NEIGHBOR_COUNT];
 const fn new_neighbor_array() -> NeighborArray {
     [0; NEIGHBOR_COUNT]
 }
 
-type NeighborArrayMap = SudokuArray<NeighborArray>;
+type NeighborArrayMap = SudokuArrayType<NeighborArray>;
 
+// Map from an index to the indexes of its numbers. This can be generated at the compile time.
 pub static NEIGHBOR_ARRAY_MAP: NeighborArrayMap = build_neigh_arr_map();
 
 const fn get_neighs_for_idx(idx: usize) -> NeighborArray {
     let mut bit_array = [false; NODE_COUNT];
 
-    let row = idx / COLOR_COUNT;
-    let col = idx % COLOR_COUNT;
-    let sqr = row / RANK * RANK + col / RANK;
+    let row = row_idx(idx);
+    let col = col_idx(idx);
+    let sqr = sqr_idx(idx);
 
     let mut i = 0;
     while i < 9 {
@@ -112,7 +126,7 @@ const fn build_neigh_arr_map() -> NeighborArrayMap {
         ret[i] = get_neighs_for_idx(i);
         i += 1;
     }
-    SudokuArray(ret)
+    ret
 }
 
 #[cfg(test)]
