@@ -396,7 +396,7 @@ export class BoardUi {
             ctx,
             cell.coordinate,
             this.focusedNumber,
-            this.getTheme().colorHighlightBg2,
+            this.getTheme().colorHighlightBg1,
           );
         }
       }
@@ -441,7 +441,7 @@ export class BoardUi {
       val: number,
       coord: Coordinates,
       small: boolean,
-      color: string,
+      defaultColor: string,
     ) => {
       const boxSize = this.getCellSize() / (small ? 3 : 1);
       const fontSize = boxSize * 0.8;
@@ -454,7 +454,10 @@ export class BoardUi {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `${fontSize}px monospace`;
-      ctx.fillStyle = color;
+      ctx.fillStyle = defaultColor;
+      if (val === this.focusedNumber) {
+        ctx.fillStyle = this.getTheme().colorHighlightFg;
+      }
       ctx.fillText(val.toString(), x, y);
     };
 
