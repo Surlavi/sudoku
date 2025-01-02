@@ -125,10 +125,10 @@ class VirtualKeyboard {
     const x2 = boardUi.getCanvasPosForIdx(coord.x + 1);
     const y1 = boardUi.getCanvasPosForIdx(coord.y);
 
-    const MARGIN = 3;
+    const MARGIN = 8;
 
     const x = x1 - w - MARGIN > 0 ? x1 - w - MARGIN : x2 + MARGIN;
-    const y = y1 + h < boardUi.config.size ? y1 + 40 : boardUi.config.size - h;
+    const y = y1 + h < boardUi.config.size ? y1 + 30 : boardUi.config.size - h;
 
     this.container.style.left = `${x}px`;
     this.container.style.top = `${y}px`;
