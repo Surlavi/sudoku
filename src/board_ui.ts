@@ -63,7 +63,7 @@ export interface Config {
 }
 
 const VIRTUAL_KB_HTML = `
-<div>
+<div id="draft-mode-line">
   <label class="switch">
     <input type="checkbox" id="kb-draft-mode-switch" checked="true">
     <span class="slider"></span>
@@ -97,12 +97,19 @@ class VirtualKeyboard {
       key.dataset['value'] = `${i}`;
       key.addEventListener('click', ev => {
         ev.preventDefault();
+        ev.stopPropagation();
         if (key.classList.contains('disabled')) return;
         this.cb(i, keyboardDraftModeSwitch.checked);
       });
       keyboard.appendChild(key);
     }
 
+    // Scope the click events.
+    container.addEventListener('click', ev => {
+      ev.stopPropagation();
+    });
+
+    // This needs to be called before hide().
     this.width = this.container.clientWidth;
     this.height = this.container.clientHeight;
 
@@ -244,6 +251,8 @@ export class BoardUi {
     this.redrawGrid();
     this.redrawNumbers();
     this.clickCanvas.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       this.virtualKeyboard.hide();
       const rect = this.clickCanvas.getBoundingClientRect();
       const x = this.getIdxForCanvasPos(ev.clientX - rect.left);
@@ -262,6 +271,8 @@ export class BoardUi {
       }
     });
     this.clickCanvas.addEventListener('dblclick', (ev: MouseEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       const rect = this.clickCanvas.getBoundingClientRect();
       const x = this.getIdxForCanvasPos(ev.clientX - rect.left);
       const y = this.getIdxForCanvasPos(ev.clientY - rect.top);
@@ -280,6 +291,10 @@ export class BoardUi {
 
   updateCursor(coord: Coordinates | null): void {
     console.log('Set cursor to %s', coord);
+
+    if (coord === null) {
+      this.virtualKeyboard.hide();
+    }
 
     // TODO: If the pos did not change, we can skip the following logic.
     this.cursorCoord = coord;

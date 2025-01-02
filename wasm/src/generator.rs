@@ -236,7 +236,7 @@ fn generate_mix(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
     loop {
         loop_cnt += 1;
         // TODO: Make this configurable.
-        if now.elapsed() > Duration::from_secs(1) {
+        if now.elapsed() > Duration::from_secs(3) {
             println!(
                 "Found suboptimal result with clue cnt: {}, loop cnt: {}",
                 tmp_result.best_hint_cnt, loop_cnt

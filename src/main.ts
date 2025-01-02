@@ -61,6 +61,10 @@ async function main() {
     }
   });
 
+  window.addEventListener('click', () => {
+    controller.handleOutOfBoundClick();
+  });
+
   // Show the game page.
   switchPage(welcomePageDom, gamePageDom);
 }

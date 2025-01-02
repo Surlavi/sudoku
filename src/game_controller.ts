@@ -32,16 +32,7 @@ const HTML_CONTENT = `
   </span>
 </div>
 <div id="board" style="position: relative;"></div>
-<div id="num-keyboard">
-  <div>
-    <label class="switch">
-      <input type="checkbox" id="kb-draft-mode-switch" checked="true">
-      <span class="slider"></span>
-    </label>
-    <span>Draft mode</span>
-  </div>
-  <div div class="keyboard" id="keyboard"></div>
-</div>`;
+<div id="num-keyboard"></div>`;
 
 export class GameController {
   game: Game;
@@ -122,6 +113,10 @@ export class GameController {
     }
     this.boardUi.updateBoard();
     this.refreshBanner(true);
+  }
+
+  handleOutOfBoundClick() {
+    this.boardUi.updateCursor(null);
   }
 
   private refreshBanner(once = false) {
