@@ -5,6 +5,12 @@ use rand::{seq::SliceRandom, thread_rng};
 
 use crate::*;
 
+#[derive(Clone, Copy)]
+pub struct GeneratorConfig {
+    pub timeout: Option<Duration>,
+    pub target_clues_num: NodeIndexType,
+}
+
 // Verifies that the current value at idx is not empty and is valid.
 fn validate_idx(arr: &ColorArray, i: usize) -> bool {
     if arr[i] == 0 || arr[i] > (COLOR_COUNT as u8) {
@@ -164,7 +170,7 @@ impl IntermediateResult {
 fn generate_puzzle_from_full_impl(
     answer: &ColorArray,
     arr: &mut ColorArray,
-    target_non_empty: usize,
+    config: GeneratorConfig,
     cannot_remove: &[bool; NODE_COUNT],
     tmp_result: &mut IntermediateResult,
 ) -> bool {
@@ -181,7 +187,7 @@ fn generate_puzzle_from_full_impl(
     }
 
     let current_non_empty = count_clues(arr);
-    if current_non_empty == target_non_empty {
+    if current_non_empty == config.target_clues_num {
         return true;
     }
 
@@ -195,13 +201,7 @@ fn generate_puzzle_from_full_impl(
         }
         let val = arr[i as usize];
         arr[i as usize] = 0;
-        if generate_puzzle_from_full_impl(
-            answer,
-            arr,
-            target_non_empty,
-            &cannot_remove_copy,
-            tmp_result,
-        ) {
+        if generate_puzzle_from_full_impl(answer, arr, config, &cannot_remove_copy, tmp_result) {
             return true;
         }
         arr[i as usize] = val;
@@ -211,11 +211,11 @@ fn generate_puzzle_from_full_impl(
     false
 }
 
-fn generate_sequential(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
+fn generate_sequential(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
     loop {
         let nodes_to_remove = shuffle_nodes();
         let mut puzzle = *answer;
-        for i in 0..(NODE_COUNT - target_non_empty) {
+        for i in 0..(NODE_COUNT - config.target_clues_num as usize) {
             puzzle[nodes_to_remove[i] as usize] = 0;
         }
         match fast_solve(&puzzle, Some(answer)) {
@@ -229,27 +229,34 @@ fn generate_sequential(answer: &ColorArray, target_non_empty: usize) -> ColorArr
     }
 }
 
-fn generate_mix(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
+fn generate_mix(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
     let now = Instant::now();
     let mut tmp_result = IntermediateResult::new();
     let mut loop_cnt = 0;
     loop {
         loop_cnt += 1;
-        // TODO: Make this configurable.
-        if now.elapsed() > Duration::from_secs(3) {
-            println!(
-                "Found suboptimal result with clue cnt: {}, loop cnt: {}",
-                tmp_result.best_hint_cnt, loop_cnt
-            );
-            return tmp_result.best_puzzle.unwrap();
+        if let Some(timeout) = config.timeout {
+            if now.elapsed() > timeout {
+                println!(
+                    "Found suboptimal result with clue cnt: {}, loop cnt: {}",
+                    tmp_result.best_hint_cnt, loop_cnt
+                );
+                return tmp_result.best_puzzle.unwrap();
+            }
         }
 
-        let mut puzzle = generate_sequential(answer, 28);
+        let mut puzzle = generate_sequential(
+            answer,
+            GeneratorConfig {
+                timeout: None,
+                target_clues_num: 28,
+            },
+        );
         // println!("{:?}", fast_solve(&puzzle, None));
         if !generate_puzzle_from_full_impl(
             answer,
             &mut puzzle,
-            target_non_empty,
+            config,
             &[false; NODE_COUNT],
             &mut tmp_result,
         ) {
@@ -262,7 +269,7 @@ fn generate_mix(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
 // Generates a puzzle from a full sudoku array randomly.
 // target_non_empty controls the minimum number of the non-empty cells in the puzzle.
 // It should not be smaller than 17.
-pub fn generate_puzzle_from_full(answer: &ColorArray, target_non_empty: usize) -> ColorArray {
+pub fn generate_puzzle_from_full(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
     // let mut puzzle = ColorArray::new(**answer);
     // generate_puzzle_from_full_impl(
     //     answer,
@@ -271,7 +278,7 @@ pub fn generate_puzzle_from_full(answer: &ColorArray, target_non_empty: usize) -
     //     &[false; NODE_COUNT],
     // );
 
-    let puzzle = generate_mix(answer, target_non_empty);
+    let puzzle = generate_mix(answer, config);
 
     // Validate the puzzle again.
     match fast_solve(&puzzle, None) {
@@ -283,6 +290,11 @@ pub fn generate_puzzle_from_full(answer: &ColorArray, target_non_empty: usize) -
         _ => todo!(),
     }
     puzzle
+}
+
+pub fn generate_puzzle(config: GeneratorConfig) -> ColorArray {
+    let arr = generate_full();
+    return generate_puzzle_from_full(&arr, config);
 }
 
 #[cfg(test)]
@@ -302,7 +314,13 @@ mod tests {
             println!("Iteration {}", i);
             let arr = generate_full();
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_sequential(&arr, 28);
+            let puzzle = generate_sequential(
+                &arr,
+                GeneratorConfig {
+                    timeout: None,
+                    target_clues_num: 28,
+                },
+            );
             print!("{}", print_sudoku_array(&puzzle, u8::to_string));
         }
     }
@@ -313,7 +331,13 @@ mod tests {
             println!("Iteration {}", i);
             let arr = generate_full();
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_puzzle_from_full(&arr, 17);
+            let puzzle = generate_puzzle_from_full(
+                &arr,
+                GeneratorConfig {
+                    timeout: Some(Duration::from_secs(1)),
+                    target_clues_num: 17,
+                },
+            );
             print!("{}", print_sudoku_array(&puzzle, u8::to_string));
         }
     }
@@ -329,7 +353,13 @@ mod tests {
         for i in 0..2 {
             println!("Iteration {}", i);
             // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_puzzle_from_full(&arr, 21);
+            let puzzle = generate_puzzle_from_full(
+                &arr,
+                GeneratorConfig {
+                    timeout: Some(Duration::from_secs(1)),
+                    target_clues_num: 17,
+                },
+            );
             print!("{}", print_sudoku_array(&puzzle, u8::to_string));
         }
     }

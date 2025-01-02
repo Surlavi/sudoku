@@ -7,6 +7,10 @@ mod solver;
 
 use core::*;
 use solver::*;
+use std::time::Duration;
+
+pub use generator::generate_puzzle;
+pub use generator::GeneratorConfig;
 
 fn new_color_array_from_js_type(src: &[u8]) -> Result<ColorArray, JsError> {
     SudokuArray::try_from(src).map_err(|err| JsError::new(&err.to_string()))
@@ -38,6 +42,12 @@ pub fn fast_resolve(board: &mut [u8]) -> Result<usize, JsError> {
 #[wasm_bindgen]
 pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) {
     let answer = generate_full();
-    let puzzle = generate_puzzle_from_full(&answer, non_empty_cnt as usize);
+    let puzzle = generate_puzzle_from_full(
+        &answer,
+        GeneratorConfig {
+            timeout: Some(Duration::from_secs(3)),
+            target_clues_num: non_empty_cnt as NodeIndexType,
+        },
+    );
     fill_color_array_to_js_type(&puzzle, output_puzzle);
 }
