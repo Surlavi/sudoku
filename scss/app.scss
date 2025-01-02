@@ -10,6 +10,8 @@ body {
   overflow-y: hidden; /* Prevent horizontal scrolling on body */
   font-family: monospace;
   font-size: 1.5em;
+  // So that double-click won't select any items.
+  user-select: none;
 }
 
 #app-container {
@@ -215,12 +217,4 @@ body {
 
 .fading-fast {
   transition: opacity 0.2s ease-in-out;
-}
-
-// So that double click won't select it.
-canvas {
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+/Edge */
-  user-select: none; /* Standard syntax */
 }
