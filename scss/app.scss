@@ -8,8 +8,7 @@ body {
   min-height: 100vh; /* Ensure body covers full viewport height */
   overflow-x: hidden; /* Prevent horizontal scrolling on body */
   overflow-y: hidden; /* Prevent horizontal scrolling on body */
-  font-family: monospace;
-  font-size: 1.5em;
+  font-size: 1.2em;
   // So that double-click won't select any items.
   user-select: none;
 }
@@ -128,6 +127,7 @@ body {
     }
     
     .key {
+      font-family: monospace;
       font-size: 36px;
       display: flex;
       align-items: center;
