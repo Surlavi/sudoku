@@ -1,4 +1,4 @@
-use generator::{generate_full, generate_puzzle_from_full};
+use generator::{generate_answer, generate_puzzle_from_answer};
 use wasm_bindgen::prelude::*;
 
 mod core;
@@ -28,7 +28,7 @@ pub fn init_panic_hook() {
 #[wasm_bindgen]
 pub fn fast_resolve(board: &mut [u8]) -> Result<usize, JsError> {
     let sudoku_array = new_color_array_from_js_type(board)?;
-    match fast_solve(&sudoku_array, None) {
+    match fast_solve(&sudoku_array) {
         SolveResult::Invalid => todo!(),
         SolveResult::Unique(answer) => {
             fill_color_array_to_js_type(&answer, board);
@@ -40,8 +40,8 @@ pub fn fast_resolve(board: &mut [u8]) -> Result<usize, JsError> {
 
 #[wasm_bindgen]
 pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) {
-    let answer = generate_full();
-    let puzzle = generate_puzzle_from_full(
+    let answer = generate_answer();
+    let puzzle = generate_puzzle_from_answer(
         &answer,
         GeneratorConfig {
             timeout: Some(Duration::from_secs(5)),

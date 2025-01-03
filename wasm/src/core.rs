@@ -30,7 +30,16 @@ pub trait SudokuArray<T: SudokuValue + Copy> {
 
     fn uncolored_node_count(&self) -> usize;
 
-    fn contains(&self, b: &Self) -> bool;
+    // Checks that if putting color at idx will cause direct conflict (i.e., no
+    // neighbor of this idx has the same color).
+    fn validate_color_at_idx(&self, color: ColorType, idx: NodeIndexType) -> bool;
+
+    // Checks that if the current array has conflict values. If strict is true,
+    // also checks that all the cells are not empty.
+    fn validate_colors(&self, strict: bool) -> bool;
+
+    // Counts the number of empty cells.
+    fn count_clues(&self) -> usize;
 }
 
 impl<T> SudokuArray<T> for [T; NODE_COUNT]
@@ -49,13 +58,36 @@ where
         self.iter().filter(|n| n.to_color() == 0).count()
     }
 
-    fn contains(&self, b: &Self) -> bool {
-        for i in 0..NODE_COUNT {
-            if self[i].to_color() != b[i].to_color() && b[i].to_color() != 0 {
+    fn validate_color_at_idx(&self, color: ColorType, idx: NodeIndexType) -> bool {
+        for j in NEIGHBOR_ARRAY_MAP[idx] {
+            if self[j].to_color() != 0 && color == self[j].to_color() {
                 return false;
             }
         }
         true
+    }
+
+    fn validate_colors(&self, strict: bool) -> bool {
+        for i in 0..NODE_COUNT {
+            let c = self[i].to_color();
+            if strict && c == 0 {
+                return false;
+            }
+            if c != 0 && !self.validate_color_at_idx(c, i) {
+                return false;
+            }
+        }
+        true
+    }
+    
+    fn count_clues(&self) -> usize {
+        let mut cnt = 0;
+        for i in 0..NODE_COUNT {
+            if self[i].to_color() != 0 {
+                cnt += 1;
+            }
+        }
+        cnt
     }
 }
 

@@ -14,40 +14,7 @@ pub struct GeneratorConfig {
     pub target_clues_num: NodeIndexType,
 }
 
-// Verifies that the current value at idx is not empty and is valid.
-fn validate_idx(arr: &ColorArray, i: usize) -> bool {
-    if arr[i] == 0 || arr[i] > (COLOR_COUNT as u8) {
-        return false;
-    }
-    for j in NEIGHBOR_ARRAY_MAP[i] {
-        if arr[i] == arr[j] {
-            return false;
-        }
-    }
-    true
-}
-
-// Verifies that a sudoku array is valid (no empty cells).
-pub fn validate(arr: &ColorArray) -> bool {
-    for i in 0..NODE_COUNT {
-        if !validate_idx(arr, i) {
-            return false;
-        }
-    }
-    true
-}
-
-pub fn count_clues(arr: &ColorArray) -> usize {
-    let mut cnt = 0;
-    for i in 0..NODE_COUNT {
-        if arr[i] != 0 {
-            cnt += 1;
-        }
-    }
-    cnt
-}
-
-fn shuffle_colors() -> [u8; COLOR_COUNT] {
+fn shuffle_colors() -> [ColorType; COLOR_COUNT] {
     let mut ret = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     ret.shuffle(&mut thread_rng());
     ret
@@ -61,7 +28,7 @@ fn generate_full_impl(arr: &mut ColorArray, i: usize) -> bool {
     let colors = shuffle_colors();
     for c in colors {
         arr[i] = c;
-        if validate_idx(arr, i) && generate_full_impl(arr, i + 1) {
+        if arr.validate_color_at_idx(c, i) && generate_full_impl(arr, i + 1) {
             return true;
         }
         arr[i] = 0;
@@ -70,13 +37,13 @@ fn generate_full_impl(arr: &mut ColorArray, i: usize) -> bool {
 }
 
 // Generates a full sudoku array (no empty cells) randomly.
-pub fn generate_full() -> ColorArray {
+pub fn generate_answer() -> ColorArray {
     let mut arr = [0; NODE_COUNT];
 
     // Generate the first row directly.
-    arr[..9].copy_from_slice(&shuffle_colors());
+    arr[..COLOR_COUNT].copy_from_slice(&shuffle_colors());
     generate_full_impl(&mut arr, COLOR_COUNT);
-    if !validate(&arr) {
+    if !arr.validate_colors(true) {
         panic!(
             "Failed to generate full array: {}",
             print_sudoku_array(&arr, u8::to_string)
@@ -98,15 +65,10 @@ const fn create_nodes_array() -> [u8; NODE_COUNT] {
 
 const NODES_ARRAY: [u8; NODE_COUNT] = create_nodes_array();
 
+// Shuffles the nodes index randomly.
 fn shuffle_nodes() -> [u8; NODE_COUNT] {
     let mut ret = NODES_ARRAY;
-
-    // Deterministic behavior in unit tests.
-    // #[cfg(not(test))]
-    {
-        ret.shuffle(&mut thread_rng());
-    }
-
+    ret.shuffle(&mut thread_rng());
     ret
 }
 
@@ -162,7 +124,7 @@ impl IntermediateResult {
         }
     }
     fn update_puzzle(&mut self, puzzle: &ColorArray) {
-        let cnt = count_clues(puzzle);
+        let cnt = puzzle.count_clues();
         if cnt < self.best_hint_cnt {
             self.best_hint_cnt = cnt;
             self.best_puzzle = Some(*puzzle);
@@ -170,23 +132,19 @@ impl IntermediateResult {
     }
 }
 
-fn generate_puzzle_from_full_impl(
+fn generate_puzzle_from_answer_dfs(
     answer: &ColorArray,
     arr: &mut ColorArray,
     config: GeneratorConfig,
     cannot_remove: &[bool; NODE_COUNT],
     tmp_result: &mut IntermediateResult,
 ) -> bool {
-    match fast_solve(arr, Some(answer)) {
-        SolveResult::Invalid => panic!("Got an invalid array"),
-        SolveResult::Multiple => return false,
-        SolveResult::Unique(_) => {
-            // This is the good case.
-            tmp_result.update_puzzle(arr);
-        }
+    match check_puzzle_has_unique_answer(arr, answer) {
+        true => tmp_result.update_puzzle(arr),
+        false => return false,
     }
 
-    let current_non_empty = count_clues(arr);
+    let current_non_empty = arr.count_clues();
     if current_non_empty <= config.target_clues_num {
         return true;
     }
@@ -201,7 +159,7 @@ fn generate_puzzle_from_full_impl(
         }
         let val = arr[i as usize];
         arr[i as usize] = 0;
-        if generate_puzzle_from_full_impl(answer, arr, config, &cannot_remove_copy, tmp_result) {
+        if generate_puzzle_from_answer_dfs(answer, arr, config, &cannot_remove_copy, tmp_result) {
             return true;
         }
         arr[i as usize] = val;
@@ -211,10 +169,10 @@ fn generate_puzzle_from_full_impl(
     false
 }
 
-fn drop_number_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -> ColorArray {
-    let mut pos = [[0u8; 9]; 9];
-    let mut cnt = [0_u8; 9];
-    for i in 0..81 {
+fn drop_numbers_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -> ColorArray {
+    let mut pos = [[0u8; COLOR_COUNT]; COLOR_COUNT];
+    let mut cnt = [0_u8; COLOR_COUNT];
+    for i in 0..NODE_COUNT {
         let c = answer[i];
         pos[c as usize - 1][cnt[c as usize - 1] as usize] = i as u8;
         cnt[c as usize - 1] += 1;
@@ -223,9 +181,9 @@ fn drop_number_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -
         pos[i].shuffle(&mut thread_rng())
     }
     let mut ret = *answer;
+
+    // Leave 81-6*9=27 at least. Leaving 21 numbers is very inefficient.
     let steps = min((NODE_COUNT - target_clues_num) / COLOR_COUNT, 6);
-    // println!("{}", target_clues_num);
-    // let steps = 6;
     for c in 0..COLOR_COUNT {
         for j in 0..steps {
             let p = pos[c][j];
@@ -235,23 +193,17 @@ fn drop_number_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -
     ret
 }
 
-fn generate_sequential(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
+fn generate_puzzle_by_random_sequence(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
     loop {
-        // let nodes_to_remove = shuffle_nodes();
-        // let mut puzzle = *answer;
-        // for i in 0..(NODE_COUNT - config.target_clues_num as usize) {
-        //     puzzle[nodes_to_remove[i] as usize] = 0;
-        // }
-        let puzzle = drop_number_uniformly(answer, config.target_clues_num);
-        match fast_solve(&puzzle, Some(answer)) {
-            SolveResult::Invalid => panic!(),
-            SolveResult::Multiple => continue,
-            SolveResult::Unique(_) => return puzzle,
+        let puzzle = drop_numbers_uniformly(answer, config.target_clues_num);
+        match check_puzzle_has_unique_answer(&puzzle, answer) {
+            true => return puzzle,
+            false => continue,
         }
     }
 }
 
-fn generate_mix(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
+fn generate_puzzle_from_answer_impl(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
     let now = Instant::now();
     let mut tmp_result = IntermediateResult::new();
     let mut loop_cnt = 0;
@@ -267,15 +219,15 @@ fn generate_mix(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
             }
         }
 
-        let mut puzzle = generate_sequential(
+        let mut puzzle = generate_puzzle_by_random_sequence(
             answer,
             GeneratorConfig {
                 timeout: None,
                 target_clues_num: max(config.target_clues_num, 27),
             },
         );
-        // println!("{:?}", fast_solve(&puzzle, None));
-        if !generate_puzzle_from_full_impl(
+
+        if !generate_puzzle_from_answer_dfs(
             answer,
             &mut puzzle,
             config,
@@ -291,32 +243,24 @@ fn generate_mix(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
 // Generates a puzzle from a full sudoku array randomly.
 // target_non_empty controls the minimum number of the non-empty cells in the puzzle.
 // It should not be smaller than 17.
-pub fn generate_puzzle_from_full(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
-    // let mut puzzle = ColorArray::new(**answer);
-    // generate_puzzle_from_full_impl(
-    //     answer,
-    //     &mut puzzle,
-    //     target_non_empty,
-    //     &[false; NODE_COUNT],
-    // );
-
-    let puzzle = generate_mix(answer, config);
+pub fn generate_puzzle_from_answer(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
+    let puzzle = generate_puzzle_from_answer_impl(answer, config);
 
     // Validate the puzzle again.
-    match fast_solve(&puzzle, None) {
+    match fast_solve(&puzzle) {
         SolveResult::Unique(result) => {
             if result != *answer {
                 panic!("Invalid state");
             }
         }
-        _ => todo!(),
+        _ => panic!(),
     }
     puzzle
 }
 
 pub fn generate_puzzle(config: GeneratorConfig) -> ColorArray {
-    let arr = generate_full();
-    generate_puzzle_from_full(&arr, config)
+    let arr = generate_answer();
+    generate_puzzle_from_answer(&arr, config)
 }
 
 #[cfg(test)]
@@ -324,65 +268,67 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_generate_full() {
-        // Only trigger the generation. It will validate itself.
-        let arr = generate_full();
-        print!("{}", print_sudoku_array(&arr, u8::to_string));
+    fn test_generate_answer() {
+        let answer = generate_answer();
+        assert!(answer.validate_colors(true));
     }
 
     #[test]
-    fn test_generate_sequential() {
-        for i in 0..5 {
-            println!("Iteration {}", i);
-            let arr = generate_full();
-            // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_sequential(
-                &arr,
-                GeneratorConfig {
-                    timeout: None,
-                    target_clues_num: 28,
-                },
-            );
-            print!("{}", print_sudoku_array(&puzzle, u8::to_string));
-        }
+    fn test_generate_puzzle_by_random_sequence_28() {
+        let answer = generate_answer();
+        let puzzle = generate_puzzle_by_random_sequence(
+            &answer,
+            GeneratorConfig {
+                timeout: None,
+                target_clues_num: 28,
+            },
+        );
+        assert_eq!(puzzle.count_clues(), 36);
     }
 
     #[test]
-    fn test_generate_puzzle_e2e() {
-        for i in 0..2 {
-            println!("Iteration {}", i);
-            let arr = generate_full();
-            // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_puzzle_from_full(
-                &arr,
-                GeneratorConfig {
-                    timeout: Some(Duration::from_secs(1)),
-                    target_clues_num: 17,
-                },
-            );
-            print!("{}", print_sudoku_array(&puzzle, u8::to_string));
-        }
+    fn test_generate_puzzle_by_random_sequence_27() {
+        let answer = generate_answer();
+        let puzzle = generate_puzzle_by_random_sequence(
+            &answer,
+            GeneratorConfig {
+                timeout: None,
+                target_clues_num: 27,
+            },
+        );
+        assert_eq!(puzzle.count_clues(), 27);
     }
 
     #[test]
-    fn test_generate_puzzle_from_full() {
-        let arr = [
+    fn test_generate_puzzle_from_answer() {
+        let answer = [
             5, 3, 9, 4, 8, 2, 6, 1, 7, 8, 6, 4, 9, 7, 1, 5, 2, 3, 7, 1, 2, 5, 3, 6, 4, 9, 8, 2, 5,
             6, 7, 4, 3, 9, 8, 1, 1, 4, 3, 8, 2, 9, 7, 5, 6, 9, 8, 7, 1, 6, 5, 3, 4, 2, 4, 7, 1, 6,
             9, 8, 2, 3, 5, 6, 2, 5, 3, 1, 4, 8, 7, 9, 3, 9, 8, 2, 5, 7, 1, 6, 4,
         ];
 
-        for i in 0..2 {
-            println!("Iteration {}", i);
-            // 22~23 seems to be the threshold of the current algo: values lower than it will take much longer time to generate.
-            let puzzle = generate_puzzle_from_full(
-                &arr,
-                GeneratorConfig {
-                    timeout: Some(Duration::from_secs(1)),
-                    target_clues_num: 17,
-                },
-            );
-            print!("{}", print_sudoku_array(&puzzle, u8::to_string));
-        }
+        let puzzle = generate_puzzle_from_answer(
+            &answer,
+            GeneratorConfig {
+                timeout: Some(Duration::from_secs(1)),
+                target_clues_num: 17,
+            },
+        );
+
+        assert_eq!(fast_solve(&puzzle), SolveResult::Unique(answer));
     }
+
+    #[test]
+    fn test_generate_puzzle() {
+        let answer = generate_answer();
+        let puzzle = generate_puzzle_from_answer(
+            &answer,
+            GeneratorConfig {
+                timeout: Some(Duration::from_secs(1)),
+                target_clues_num: 17,
+            },
+        );
+        assert!(puzzle.count_clues() < 27);
+    }
+
 }
