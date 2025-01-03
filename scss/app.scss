@@ -37,7 +37,8 @@ body {
 }
 
 .hidden {
-  display: none;
+  z-index: -200;
+  opacity: 0;
 }
 
 #init-page {
@@ -235,7 +236,7 @@ body {
 }
 
 .fading-fast {
-  transition: opacity 0.2s ease-in-out;
+  transition: 0.08s ease-in-out;
 }
 
 #build-info {
