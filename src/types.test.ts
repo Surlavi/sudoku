@@ -1,5 +1,5 @@
-import * as types from './types';
-import {resolve} from './resolve';
+import * as types from './types.js';
+import {resolve} from './resolve.js';
 
 const BOARD_EXAMPLE = `
 . . 3 . 2 . 6 . .

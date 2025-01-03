@@ -1,4 +1,7 @@
-use std::{cmp::{max, min}, time::Duration};
+use std::{
+    cmp::{max, min},
+    time::Duration,
+};
 use web_time::Instant;
 
 use rand::{seq::SliceRandom, thread_rng};
@@ -209,15 +212,15 @@ fn generate_puzzle_from_full_impl(
 }
 
 fn drop_number_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -> ColorArray {
-    let mut pos = [[0u8;9];9];
-    let mut cnt = [0 as u8; 9];
+    let mut pos = [[0u8; 9]; 9];
+    let mut cnt = [0_u8; 9];
     for i in 0..81 {
         let c = answer[i];
         pos[c as usize - 1][cnt[c as usize - 1] as usize] = i as u8;
         cnt[c as usize - 1] += 1;
     }
     for i in 0..COLOR_COUNT {
-        pos[i as usize].shuffle(&mut thread_rng())
+        pos[i].shuffle(&mut thread_rng())
     }
     let mut ret = *answer;
     let steps = min((NODE_COUNT - target_clues_num) / COLOR_COUNT, 6);
@@ -225,11 +228,11 @@ fn drop_number_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -
     // let steps = 6;
     for c in 0..COLOR_COUNT {
         for j in 0..steps {
-            let p = pos[c as usize ][j];
+            let p = pos[c][j];
             ret[p as usize] = 0;
         }
     }
-    return ret;
+    ret
 }
 
 fn generate_sequential(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
@@ -313,7 +316,7 @@ pub fn generate_puzzle_from_full(answer: &ColorArray, config: GeneratorConfig) -
 
 pub fn generate_puzzle(config: GeneratorConfig) -> ColorArray {
     let arr = generate_full();
-    return generate_puzzle_from_full(&arr, config);
+    generate_puzzle_from_full(&arr, config)
 }
 
 #[cfg(test)]

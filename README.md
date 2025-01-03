@@ -9,6 +9,7 @@
   - `sh build.sh`
 - Run unit tests
   - `npm run test`
+    - TODO: This does not work now. Need to fix it.
   - `cargo test --release`
 - Benchmark unit tests in rust:
   - Example on wsl: `PERF=/usr/lib/linux-tools/5.4.0-204-generic/perf flamegraph -- target/release/deps/sudoku_wasm-...`

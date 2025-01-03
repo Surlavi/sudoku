@@ -157,7 +157,7 @@ class VirtualKeyboard {
     });
   }
 
-  hide(animation = false) {
+  hide() {
     console.log('hide virtual keyboard');
     this.container.classList.add('hidden');
     this.container.style.opacity = '0';

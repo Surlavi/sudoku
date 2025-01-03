@@ -120,7 +120,7 @@ mod neighbor_based {
                 available_colors: Colors::new(true),
             }
         }
-    
+
         fn to_color(&self) -> ColorType {
             self.color
         }
@@ -338,7 +338,7 @@ mod neighbor_based {
             #[cfg(debug_assertions)]
             {
                 let mut node_arr_copy = node_arr;
-                let result =  node_arr_copy.eliminate(None, &mut NodeStack::new());
+                let result = node_arr_copy.eliminate(None, &mut NodeStack::new());
                 if result.is_some() {
                     panic!();
                 }
@@ -347,7 +347,10 @@ mod neighbor_based {
                 }
             }
 
-            Solver { node_arr: node_arr, hint_answer }
+            Solver {
+                node_arr,
+                hint_answer,
+            }
         }
 
         fn solve(&mut self) -> SolveResult {
@@ -365,24 +368,28 @@ mod neighbor_based {
                 let result = node_arr_copy
                     .eliminate_and_fill(Some(idx))
                     .unwrap_or_else(|| {
-                        Solver::new(node_arr_copy, if Some(c) == hint_color {
-                            self.hint_answer
-                        } else {
-                            None
-                        }).solve()
+                        Solver::new(
+                            node_arr_copy,
+                            if Some(c) == hint_color {
+                                self.hint_answer
+                            } else {
+                                None
+                            },
+                        )
+                        .solve()
                     });
                 match result {
                     SolveResult::Invalid => continue,
-                    SolveResult::Unique(answer) =>{ 
+                    SolveResult::Unique(answer) => {
                         if found_answer.is_some() {
                             return SolveResult::Multiple;
                         }
                         found_answer = Some(answer)
-                    },
+                    }
                     SolveResult::Multiple => return SolveResult::Multiple,
                 }
             }
-    
+
             match found_answer {
                 Some(v) => SolveResult::Unique(v),
                 None => SolveResult::Invalid,

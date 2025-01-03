@@ -15,12 +15,12 @@ pub trait SudokuValue {
 impl SudokuValue for u8 {
     #[inline]
     fn from_color(number: ColorType) -> Self {
-        return number;
+        number
     }
 
     #[inline]
     fn to_color(&self) -> ColorType {
-        return *self;
+        *self
     }
 }
 
@@ -33,7 +33,10 @@ pub trait SudokuArray<T: SudokuValue + Copy> {
     fn contains(&self, b: &Self) -> bool;
 }
 
-impl<T> SudokuArray<T> for [T; NODE_COUNT] where T: SudokuValue + Copy {
+impl<T> SudokuArray<T> for [T; NODE_COUNT]
+where
+    T: SudokuValue + Copy,
+{
     fn from_color_array(colors: &ColorArray) -> Self {
         colors.map(T::from_color)
     }
@@ -45,7 +48,7 @@ impl<T> SudokuArray<T> for [T; NODE_COUNT] where T: SudokuValue + Copy {
     fn uncolored_node_count(&self) -> usize {
         self.iter().filter(|n| n.to_color() == 0).count()
     }
-    
+
     fn contains(&self, b: &Self) -> bool {
         for i in 0..NODE_COUNT {
             if self[i].to_color() != b[i].to_color() && b[i].to_color() != 0 {
@@ -68,9 +71,15 @@ pub fn print_sudoku_array<T>(data: &[T; NODE_COUNT], printer: fn(&T) -> String) 
 }
 
 // Helper functions for calculating index.
-const fn row_idx(idx: usize) -> usize { idx / COLOR_COUNT }
-const fn col_idx(idx: usize) -> usize { idx % COLOR_COUNT }
-const fn sqr_idx(idx: usize) -> usize { row_idx(idx) / RANK * RANK + col_idx(idx) / RANK }
+const fn row_idx(idx: usize) -> usize {
+    idx / COLOR_COUNT
+}
+const fn col_idx(idx: usize) -> usize {
+    idx % COLOR_COUNT
+}
+const fn sqr_idx(idx: usize) -> usize {
+    row_idx(idx) / RANK * RANK + col_idx(idx) / RANK
+}
 
 // Number of neighbors per node (8 + 8 + 4).
 const NEIGHBOR_COUNT: usize = 20;
