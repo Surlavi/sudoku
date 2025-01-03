@@ -1,11 +1,6 @@
 import * as types from './types.js';
 
-import {
-  ResolvingCell,
-  CELLS_NUMBER,
-  MAX_NUMBER,
-  ResolvingCellState,
-} from './types.js';
+import {ResolvingCell, CELLS_NUMBER, ResolvingCellState} from './types.js';
 
 export class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
   static createFromBoard(board: Readonly<types.Board>): ResolvingBoard {
@@ -18,6 +13,10 @@ export class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
       }
     }
     return new ResolvingBoard(cells);
+  }
+
+  clone(): ResolvingBoard {
+    return new ResolvingBoard(this.cells.map(c => c.clone()));
   }
 
   getEmptyCellsCount(): number {

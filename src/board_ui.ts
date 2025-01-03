@@ -236,7 +236,10 @@ export class BoardUi {
     return null;
   }
 
-  updateBoard(): void {
+  updateBoard(board: ResolvingBoard | null = null): void {
+    if (board !== null) {
+      this.gameBoard = board;
+    }
     this.redrawNumbers();
     this.redrawHighlight();
   }

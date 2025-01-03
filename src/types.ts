@@ -23,6 +23,14 @@ class CellValueSet {
     this.bitmap = new Array<boolean>(MAX_NUMBER + 1).fill(initValue);
   }
 
+  clone(): CellValueSet {
+    const ret = new CellValueSet();
+    for (let i = 0; i < this.bitmap.length; i++) {
+      ret.bitmap[i] = this.bitmap[i];
+    }
+    return ret;
+  }
+
   add(value: number): CellValueSet {
     this.bitmap[value] = true;
     return this;
@@ -151,7 +159,7 @@ export enum ResolvingCellState {
 
 export class ResolvingCell extends Cell {
   state: ResolvingCellState;
-  readonly draftNumbers: CellValueSet;
+  draftNumbers: CellValueSet;
 
   static newPrefilled(coordinate: Coordinates, value: number): ResolvingCell {
     return new ResolvingCell(coordinate, ResolvingCellState.PREFILLED, value);
@@ -169,6 +177,12 @@ export class ResolvingCell extends Cell {
     super(coordinate, value);
     this.state = state;
     this.draftNumbers = new CellValueSet(false);
+  }
+
+  clone(): ResolvingCell {
+    const ret = new ResolvingCell(this.coordinate, this.state, this.value);
+    ret.draftNumbers = this.draftNumbers.clone();
+    return ret;
   }
 
   hasNumber(): boolean {

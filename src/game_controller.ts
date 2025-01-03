@@ -35,6 +35,8 @@ const HTML_CONTENT = `
 <div id="board-buttons">
   <span class="btn-default enabled" id="btn-new-game">New Game</span>
   <span class="btn-default enabled" id="btn-quick-draft">Quick Draft</span>
+  <span class="btn-default enabled" id="btn-save">Save</span>
+  <span class="btn-default enabled" id="btn-load">Load</span>
 </div> 
 <div id="num-keyboard"></div>`;
 
@@ -80,6 +82,35 @@ export class GameController {
       ev.stopPropagation();
       if (confirm('Abort the current game and start a new one?') === true) {
         location.reload();
+      }
+    });
+
+    const saveBtn = document.getElementById('btn-save')!;
+    const loadBtn = document.getElementById('btn-load')!;
+    const updateSaveLoadBtnState = () => {
+      if (game.savedPuzzleBoard !== null) {
+        loadBtn.classList.add('enabled');
+        loadBtn.classList.remove('disabled');
+      } else {
+        loadBtn.classList.remove('enabled');
+        loadBtn.classList.add('disabled');
+      }
+    };
+    updateSaveLoadBtnState();
+    saveBtn!.addEventListener('click', ev => {
+      ev.stopPropagation();
+      game.saveState();
+      updateSaveLoadBtnState();
+    });
+    loadBtn!.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (!loadBtn.classList.contains('enabled')) {
+        return;
+      }
+      if (confirm('Load previously saved state?') === true) {
+        game.loadState();
+        this.boardUi.updateBoard(game.puzzleBoard);
+        updateSaveLoadBtnState();
       }
     });
   }

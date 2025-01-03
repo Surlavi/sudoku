@@ -5,6 +5,7 @@ import {eliminatePossibleStates, ResolvingBoard} from './resolve.js';
 export class Game {
   answerBoard: Board;
   puzzleBoard: ResolvingBoard;
+  savedPuzzleBoard: ResolvingBoard | null = null;
   startTime: DOMHighResTimeStamp;
   endTime: DOMHighResTimeStamp | null = null;
   mistakes = 0;
@@ -90,5 +91,18 @@ export class Game {
       }
     }
     return true;
+  }
+
+  saveState() {
+    this.savedPuzzleBoard = this.puzzleBoard.clone();
+  }
+
+  loadState() {
+    if (this.savedPuzzleBoard === null) {
+      console.error('No saved data');
+      return;
+    }
+    this.puzzleBoard = this.savedPuzzleBoard;
+    this.savedPuzzleBoard = null;
   }
 }
