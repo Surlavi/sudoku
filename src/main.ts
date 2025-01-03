@@ -51,8 +51,6 @@ async function main() {
   wasm.init_panic_hook();
   console.log('wasm loaded');
 
-  document.body.style.backgroundColor = theme.getCurrentTheme().colorBg;
-
   // Create a random game.
   console.log('Generating clues for %d', clues);
   const puzzleArr = new Uint8Array(81);

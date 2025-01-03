@@ -10,6 +10,7 @@ body {
   overflow-y: hidden; /* Prevent horizontal scrolling on body */
   // So that double-click won't select any items.
   user-select: none;
+  background-color: var(--color-bg);
 }
 
 #app-container {
