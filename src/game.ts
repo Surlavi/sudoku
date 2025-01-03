@@ -1,21 +1,28 @@
 import {Board, Coordinates} from './types.js';
-import {eliminatePossibleStates, ResolvingBoard} from './resolve.js';
+import {eliminatePossibleStates, SolvingBoard} from './solve.js';
 
 // Game contains the logic related to one round of game. It's supposed to be independent of UI.
 export class Game {
   answerBoard: Board;
-  puzzleBoard: ResolvingBoard;
-  savedPuzzleBoard: ResolvingBoard | null = null;
-  startTime: DOMHighResTimeStamp;
+  puzzleBoard: SolvingBoard;
+
+  // Game start time and end time.
+  readonly startTime: DOMHighResTimeStamp;
   endTime: DOMHighResTimeStamp | null = null;
+
+  // Saved state.
+  savedPuzzleBoard: SolvingBoard | null = null;
+
+  // Number of the wrong input.
   mistakes = 0;
 
   constructor(answer: Board, puzzle: Board) {
     this.answerBoard = answer;
-    this.puzzleBoard = ResolvingBoard.createFromBoard(puzzle);
+    this.puzzleBoard = SolvingBoard.createFromBoard(puzzle);
     this.startTime = performance.now();
   }
 
+  // Fills in `value` at `coord`.
   fillInNumber(coord: Coordinates, value: number) {
     const cell = this.puzzleBoard.cells[coord.linearIndex];
     if (cell.hasNumber()) {
@@ -32,10 +39,11 @@ export class Game {
 
     cell.fillNumber(value);
 
-    // Remove all unavailable draft numbers.
+    // Remove all draft numbers which are no longer possible after this action.
     const actions = eliminatePossibleStates(this.puzzleBoard);
     this.puzzleBoard.takeActions(actions);
 
+    // All values have been filled.
     if (this.isAllCorrect()) {
       this.endTime = performance.now();
       alert('Congratulations!!!');

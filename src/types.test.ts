@@ -1,5 +1,5 @@
 import * as types from './types.js';
-import {resolve} from './resolve.js';
+import {solve} from './solve.js';
 
 const BOARD_EXAMPLE = `
 . . 3 . 2 . 6 . .
@@ -36,7 +36,7 @@ describe('Board test', () => {
     expect(board.validate(/*strict=*/ true)).toBe(false);
   });
 
-  it('resolve', () => {
-    resolve(types.GenericBoard.createBoardFromString(BOARD_EXAMPLE));
+  it('solve', () => {
+    solve(types.GenericBoard.createBoardFromString(BOARD_EXAMPLE));
   });
 });

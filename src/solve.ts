@@ -1,28 +1,27 @@
 import * as types from './types.js';
 
-import {ResolvingCell, CELLS_NUMBER, ResolvingCellState} from './types.js';
+import {SolvingCell, CELLS_NUMBER, SolvingCellState} from './types.js';
 
-export class ResolvingBoard extends types.GenericBoard<ResolvingCell> {
-  static createFromBoard(board: Readonly<types.Board>): ResolvingBoard {
-    const cells = new Array<ResolvingCell>();
+export class SolvingBoard extends types.GenericBoard<SolvingCell> {
+  static createFromBoard(board: Readonly<types.Board>): SolvingBoard {
+    const cells = new Array<SolvingCell>();
     for (const cell of board.cells) {
       if (cell.value === null) {
-        cells.push(ResolvingCell.newResolving(cell.coordinate));
+        cells.push(SolvingCell.newSolving(cell.coordinate));
       } else {
-        cells.push(ResolvingCell.newPrefilled(cell.coordinate, cell.value));
+        cells.push(SolvingCell.newPrefilled(cell.coordinate, cell.value));
       }
     }
-    return new ResolvingBoard(cells);
+    return new SolvingBoard(cells);
   }
 
-  clone(): ResolvingBoard {
-    return new ResolvingBoard(this.cells.map(c => c.clone()));
+  clone(): SolvingBoard {
+    return new SolvingBoard(this.cells.map(c => c.clone()));
   }
 
   getEmptyCellsCount(): number {
-    return this.cells.filter(
-      cell => cell.state === ResolvingCellState.RESOLVING,
-    ).length;
+    return this.cells.filter(cell => cell.state === SolvingCellState.SOLVING)
+      .length;
   }
 
   getAvailableNumbersForCell(coord: types.Coordinates): ReadonlySet<number> {
@@ -84,19 +83,19 @@ function actionToString(a: Action): string {
   return `${a.coordinate.toString()}: ${a.type} value ${a.value}, reason: ${a.reasonString}`;
 }
 
-interface PartialResolver {
-  resolve(board: ResolvingBoard): Array<Action>;
+interface PartialSolver {
+  solve(board: SolvingBoard): Array<Action>;
 }
 
-export function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
+export function eliminatePossibleStates(board: SolvingBoard): Array<Action> {
   const ret = new Array<Action>();
   const addAction = function (
-    targetCell: ResolvingCell,
+    targetCell: SolvingCell,
     value: number,
-    sourceCell: ResolvingCell,
+    sourceCell: SolvingCell,
   ) {
     if (
-      targetCell.state === ResolvingCellState.RESOLVING &&
+      targetCell.state === SolvingCellState.SOLVING &&
       targetCell.draftNumbers.has(value)
     ) {
       ret.push({
@@ -110,7 +109,7 @@ export function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
   for (let i = 0; i < CELLS_NUMBER; i++) {
     const coord = types.Coordinates.fromLinearIndex(i);
     const cell = board.cells[i];
-    if (cell.state === ResolvingCellState.RESOLVING) {
+    if (cell.state === SolvingCellState.SOLVING) {
       continue;
     }
     if (cell.value === null) {
@@ -130,9 +129,9 @@ export function eliminatePossibleStates(board: ResolvingBoard): Array<Action> {
   return ret;
 }
 
-function uniqueValueSetter(board: ResolvingBoard): Array<Action> {
+function uniqueValueSetter(board: SolvingBoard): Array<Action> {
   const ret = new Array<Action>();
-  const addAction = function (cell: ResolvingCell, value: number) {
+  const addAction = function (cell: SolvingCell, value: number) {
     ret.push({
       coordinate: cell.coordinate,
       type: ActionType.FILL_IN_NUMBER,
@@ -143,7 +142,7 @@ function uniqueValueSetter(board: ResolvingBoard): Array<Action> {
 
   for (let i = 0; i < CELLS_NUMBER; i++) {
     const cell = board.cells[i];
-    if (cell.state !== ResolvingCellState.RESOLVING) {
+    if (cell.state !== SolvingCellState.SOLVING) {
       continue;
     }
     const value = cell.draftNumbers.getUnique();
@@ -155,30 +154,26 @@ function uniqueValueSetter(board: ResolvingBoard): Array<Action> {
   return ret;
 }
 
-export function resolve(board: types.Board) {
-  const resolvingBoard = ResolvingBoard.createFromBoard(board);
+export function solve(board: types.Board) {
+  const solvingBoard = SolvingBoard.createFromBoard(board);
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const resolvers: Array<PartialResolver> = [
-      {resolve: eliminatePossibleStates},
-      {resolve: uniqueValueSetter},
+    const solvers: Array<PartialSolver> = [
+      {solve: eliminatePossibleStates},
+      {solve: uniqueValueSetter},
     ];
 
-    const before = resolvingBoard.getEmptyCellsCount();
-    for (const resolver of resolvers) {
-      const actions = resolver.resolve(resolvingBoard);
+    const before = solvingBoard.getEmptyCellsCount();
+    for (const solver of solvers) {
+      const actions = solver.solve(solvingBoard);
       console.log(actions.length);
-      resolvingBoard.takeActions(actions);
+      solvingBoard.takeActions(actions);
     }
-    const after = resolvingBoard.getEmptyCellsCount();
+    const after = solvingBoard.getEmptyCellsCount();
 
-    console.log(resolvingBoard.printBoard());
+    console.log(solvingBoard.printBoard());
     if (before === after) {
       break;
     }
   }
-
-  // console.log(resolvingBoard.printBoard());
-  // for (const cell of resolvingBoard.cells){
-  // console.log(cell.possibleValues.toString());}
 }

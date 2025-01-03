@@ -157,27 +157,27 @@ export function validateCells(
   return !strict || values.hasAll();
 }
 
-export enum ResolvingCellState {
+export enum SolvingCellState {
   PREFILLED = 'Prefilled',
-  RESOLVING = 'Resolving',
-  RESOLVED = 'Resolved',
+  SOLVING = 'Solving',
+  SOLVED = 'Solved',
 }
 
-export class ResolvingCell extends Cell {
-  state: ResolvingCellState;
+export class SolvingCell extends Cell {
+  state: SolvingCellState;
   draftNumbers: CellValueSet;
 
-  static newPrefilled(coordinate: Coordinates, value: number): ResolvingCell {
-    return new ResolvingCell(coordinate, ResolvingCellState.PREFILLED, value);
+  static newPrefilled(coordinate: Coordinates, value: number): SolvingCell {
+    return new SolvingCell(coordinate, SolvingCellState.PREFILLED, value);
   }
 
-  static newResolving(coordinate: Coordinates): ResolvingCell {
-    return new ResolvingCell(coordinate, ResolvingCellState.RESOLVING, null);
+  static newSolving(coordinate: Coordinates): SolvingCell {
+    return new SolvingCell(coordinate, SolvingCellState.SOLVING, null);
   }
 
   private constructor(
     coordinate: Coordinates,
-    state: ResolvingCellState,
+    state: SolvingCellState,
     value: number | null,
   ) {
     super(coordinate, value);
@@ -185,18 +185,18 @@ export class ResolvingCell extends Cell {
     this.draftNumbers = new CellValueSet(false);
   }
 
-  clone(): ResolvingCell {
-    const ret = new ResolvingCell(this.coordinate, this.state, this.value);
+  clone(): SolvingCell {
+    const ret = new SolvingCell(this.coordinate, this.state, this.value);
     ret.draftNumbers = this.draftNumbers.clone();
     return ret;
   }
 
   hasNumber(): boolean {
     switch (this.state) {
-      case ResolvingCellState.PREFILLED:
-      case ResolvingCellState.RESOLVED:
+      case SolvingCellState.PREFILLED:
+      case SolvingCellState.SOLVED:
         return true;
-      case ResolvingCellState.RESOLVING:
+      case SolvingCellState.SOLVING:
         return false;
     }
   }
@@ -223,7 +223,7 @@ export class ResolvingCell extends Cell {
     assertCellValueInRange(value);
     this.value = value;
     this.draftNumbers.clear();
-    this.state = ResolvingCellState.RESOLVED;
+    this.state = SolvingCellState.SOLVED;
   }
 
   toString(): string {

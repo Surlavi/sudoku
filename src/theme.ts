@@ -1,3 +1,4 @@
+// This should be synced with palettes.scss.
 export interface Theme {
   colorPrefilled: string;
   colorSolved: string;
@@ -40,6 +41,7 @@ const CSS_JS_VAR_MAP: Record<string, string> = {
   'color-bg': 'colorBg',
 } as const;
 
+// This function should be called on init.
 export function init() {
   setTheme('default');
 }

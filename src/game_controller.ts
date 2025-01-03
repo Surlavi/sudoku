@@ -27,7 +27,7 @@ function keyCodeToDirection(code: string): MoveDirection {
 const HTML_CONTENT = `
 <p id="notification" class="hidden">Prompt</p>
 <div id="board-banner">
-  <span style="text-align: left;">Timer:&nbsp;<span id="value-timer">0:00</span>
+  <span style="text-align: left;">Time:&nbsp;<span id="value-timer">0:00</span>
   </span><span style="text-align: center;">Mistakes:&nbsp;<span id="value-mistakes">0</span>&nbsp;
   </span><span style="text-align: right;">Remaining:&nbsp;<span id="value-remaining">0</span>&nbsp;
   </span>
@@ -41,25 +41,35 @@ const HTML_CONTENT = `
 </div>
 <div id="num-keyboard"></div>`;
 
+/**
+ * In the UI of the game page, there are mainly 3 parts.
+ * - Banner: contains the game statistics;
+ * - Board: displays the puzzle;
+ * - Buttons: contains actions for the game.
+ */
 export class GameController {
-  game: Game;
-  pageDom: HTMLElement;
-  boardUi: BoardUi;
+  private readonly game: Game;
+  private readonly pageDom: HTMLElement;
+  private readonly boardUi: BoardUi;
 
   constructor(game: Game, pageDom: HTMLElement) {
     this.game = game;
     this.pageDom = pageDom;
 
-    // Update internal html.
+    // Update the internal html.
     this.pageDom.setHTMLUnsafe(HTML_CONTENT);
 
+    // Initialize the banner.
+    this.refreshBanner();
+
+    // Create the board drawing.
     const boardDom = document.getElementById('board')!;
     const keyboardDom = document.getElementById('num-keyboard')!;
     this.boardUi = new BoardUi(
       boardDom,
       game.puzzleBoard,
       keyboardDom,
-      this.handleVirtualKeyboardClickEvent.bind(this),
+      this.handleNumberInput.bind(this),
       {
         size: boardDom.clientWidth,
         highlightCursorNeighbors: true,
@@ -68,9 +78,7 @@ export class GameController {
       },
     );
 
-    this.refreshBanner();
-
-    // Button functions.
+    // Set up button actions.
     const quickDraftBtn = document.getElementById('btn-quick-draft');
     quickDraftBtn?.addEventListener('click', ev => {
       ev.stopPropagation();
@@ -118,6 +126,7 @@ export class GameController {
     });
   }
 
+  // Handle keyboard event for the game. Returns whether the event is consumed by this component.
   handleKeyDownEvent(ev: KeyboardEvent): boolean {
     console.log(ev);
     switch (ev.code) {
@@ -148,14 +157,15 @@ export class GameController {
     }
   }
 
+  // Note: We cannot declare vars in a case branch, so have a separate function here.
   private handleDigitKeyEvent(ev: KeyboardEvent) {
     const value = parseInt(ev.code.charAt(5));
     if (this.boardUi.cursorCoord !== null) {
-      this.handleVirtualKeyboardClickEvent(value, !ev.shiftKey);
+      this.handleNumberInput(value, !ev.shiftKey);
     }
   }
 
-  private handleVirtualKeyboardClickEvent(value: number, draftMode: boolean) {
+  private handleNumberInput(value: number, draftMode: boolean) {
     if (this.boardUi.cursorCoord === null) {
       return;
     }
@@ -170,6 +180,7 @@ export class GameController {
   }
 
   handleOutOfBoundClick() {
+    // Reset cursor if we lost the focus.
     this.boardUi.updateCursor(null);
   }
 
@@ -193,9 +204,8 @@ export class GameController {
 
     // TODO: Add stop condition.
     if (!once) {
-      setTimeout(() => {
-        this.refreshBanner();
-      }, 1000);
+      // We are showing a timer on the UI, so refresh it every second.
+      setTimeout(() => this.refreshBanner(), 1000);
     }
   }
 }

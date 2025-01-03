@@ -1,10 +1,5 @@
-import {
-  Cell,
-  Coordinates,
-  mergeCellLists,
-  ResolvingCellState,
-} from './types.js';
-import {ResolvingBoard} from './resolve.js';
+import {Cell, Coordinates, mergeCellLists, SolvingCellState} from './types.js';
+import {SolvingBoard} from './solve.js';
 import * as theme from './theme.js';
 
 interface LineStyle {
@@ -26,6 +21,17 @@ function drawLine(
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
+}
+
+function getCanvas2DContext(
+  canvas: HTMLCanvasElement,
+): CanvasRenderingContext2D {
+  return canvas.getContext('2d')!;
+}
+
+function clearCanvas(canvas: HTMLCanvasElement) {
+  const ctx = getCanvas2DContext(canvas);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 export enum MoveDirection {
@@ -63,6 +69,8 @@ const VIRTUAL_KB_HTML = `
 `;
 
 type KeyInputCallback = (value: number, draftMode: boolean) => void;
+
+// Shows a keyboard for inputting digits for the Sudoku game.
 class VirtualKeyboard {
   private readonly cb: KeyInputCallback;
   private readonly container: HTMLElement;
@@ -73,6 +81,7 @@ class VirtualKeyboard {
   constructor(container: HTMLElement, keyInputCallback: KeyInputCallback) {
     this.container = container;
     container.setHTMLUnsafe(VIRTUAL_KB_HTML);
+    container.classList.add('fading-fast');
     this.cb = keyInputCallback;
 
     const keyboard = document.getElementById('keyboard')!;
@@ -99,7 +108,7 @@ class VirtualKeyboard {
       ev.stopPropagation();
     });
 
-    // This needs to be called before hide().
+    // This needs to be called before hide(), otherwise they will be all 0s.
     this.width = this.container.clientWidth;
     this.height = this.container.clientHeight;
 
@@ -127,9 +136,7 @@ class VirtualKeyboard {
 
     // Show it.
     const c = this.container;
-    c.classList.add('fading-fast');
     c.classList.remove('hidden');
-    c.style.opacity = '1';
     console.log('display virtual keyboard at (%d, %d)', x, y);
   }
 
@@ -160,7 +167,6 @@ class VirtualKeyboard {
   hide() {
     console.log('hide virtual keyboard');
     this.container.classList.add('hidden');
-    this.container.style.opacity = '0';
   }
 }
 
@@ -168,7 +174,7 @@ export class BoardUi {
   config!: Config;
   private readonly container: HTMLElement;
 
-  gameBoard: ResolvingBoard;
+  gameBoard: SolvingBoard;
 
   private readonly virtualKeyboard: VirtualKeyboard;
 
@@ -188,7 +194,7 @@ export class BoardUi {
 
   constructor(
     container: HTMLElement,
-    gameBoard: ResolvingBoard,
+    gameBoard: SolvingBoard,
     virtualKeyboardContainer: HTMLElement,
     digitInputCallback: KeyInputCallback,
     config: Config,
@@ -236,7 +242,7 @@ export class BoardUi {
     return null;
   }
 
-  updateBoard(board: ResolvingBoard | null = null): void {
+  updateBoard(board: SolvingBoard | null = null): void {
     if (board !== null) {
       this.gameBoard = board;
     }
@@ -348,22 +354,25 @@ export class BoardUi {
     const size = this.config.size;
     canvas.style.width = `${size}px`;
     canvas.style.height = `${size}px`;
-    const ratio = window.devicePixelRatio;
-    canvas.width = size * ratio;
-    canvas.height = size * ratio;
     canvas.style.position = 'absolute';
     canvas.style.left = '0';
     canvas.style.top = '0';
     canvas.style.zIndex = `${zIndex}`;
-    const ctx = this.getCanvas2DContext(canvas);
+
+    // Scale the canvas properly.
+    const ratio = window.devicePixelRatio;
+    canvas.width = size * ratio;
+    canvas.height = size * ratio;
+    const ctx = getCanvas2DContext(canvas);
     ctx.scale(ratio, ratio);
+
     this.container.appendChild(canvas);
     return canvas;
   }
 
   private redrawHighlight(): void {
-    this.clearCanvas(this.neighHighlightCanvas);
-    this.clearCanvas(this.numberHighlightCanvas);
+    clearCanvas(this.neighHighlightCanvas);
+    clearCanvas(this.numberHighlightCanvas);
 
     const highlightCell = (
       ctx: CanvasRenderingContext2D,
@@ -395,7 +404,7 @@ export class BoardUi {
 
     const cursor = this.cursorCoord;
     if (cursor && this.config.highlightCursorNeighbors) {
-      const ctx = this.getCanvas2DContext(this.neighHighlightCanvas);
+      const ctx = getCanvas2DContext(this.neighHighlightCanvas);
       const cells = this.gameBoard.getCellsByNeighborToCoord(cursor);
       for (const cell of cells) {
         highlightCell(ctx, cell.coordinate, this.getTheme().colorHighlightBg1);
@@ -406,7 +415,7 @@ export class BoardUi {
       this.focusedNumber !== null &&
       (this.config.highlightNumberNeighbors || this.config.highlightNumber)
     ) {
-      const ctx = this.getCanvas2DContext(this.numberHighlightCanvas);
+      const ctx = getCanvas2DContext(this.numberHighlightCanvas);
       const numberCells = this.gameBoard.cells.filter((c: Cell) => {
         return c.value === this.focusedNumber;
       });
@@ -436,7 +445,7 @@ export class BoardUi {
   }
 
   private redrawGrid(): void {
-    const ctx = this.getCanvas2DContext(this.gridCanvas);
+    const ctx = getCanvas2DContext(this.gridCanvas);
     if (!ctx) {
       console.error('Context not available');
       return;
@@ -467,7 +476,7 @@ export class BoardUi {
       return;
     }
 
-    this.clearCanvas(this.numbersCanvas);
+    clearCanvas(this.numbersCanvas);
 
     const drawNumber = (
       val: number,
@@ -494,7 +503,7 @@ export class BoardUi {
     };
 
     for (const cell of this.gameBoard.cells) {
-      if (cell.state === ResolvingCellState.PREFILLED) {
+      if (cell.state === SolvingCellState.PREFILLED) {
         drawNumber(
           cell.value!,
           cell.coordinate,
@@ -502,7 +511,7 @@ export class BoardUi {
           this.getTheme().colorPrefilled,
         );
       }
-      if (cell.state === ResolvingCellState.RESOLVED) {
+      if (cell.state === SolvingCellState.SOLVED) {
         drawNumber(
           cell.value!,
           cell.coordinate,
@@ -510,7 +519,7 @@ export class BoardUi {
           this.getTheme().colorSolved,
         );
       }
-      if (cell.state === ResolvingCellState.RESOLVING) {
+      if (cell.state === SolvingCellState.SOLVING) {
         for (let i = 1; i <= 9; ++i) {
           if (cell.draftNumbers.has(i)) {
             drawNumber(i, cell.coordinate, true, this.getTheme().colorDraft);
@@ -521,10 +530,10 @@ export class BoardUi {
   }
 
   private redrawCursor(): void {
-    const ctx = this.getCanvas2DContext(this.cursorCanvas);
+    const ctx = getCanvas2DContext(this.cursorCanvas);
 
     // Clear the current drawing at first.
-    this.clearCanvas(this.cursorCanvas);
+    clearCanvas(this.cursorCanvas);
 
     const coord = this.cursorCoord;
 
@@ -543,16 +552,5 @@ export class BoardUi {
     drawLine(ctx, x1, y2, x2, y2, style);
     drawLine(ctx, x1, y1, x1, y2, style);
     drawLine(ctx, x2, y1, x2, y2, style);
-  }
-
-  private getCanvas2DContext(
-    canvas: HTMLCanvasElement,
-  ): CanvasRenderingContext2D {
-    return canvas.getContext('2d')!;
-  }
-
-  private clearCanvas(canvas: HTMLCanvasElement) {
-    const ctx = this.getCanvas2DContext(canvas);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 }
