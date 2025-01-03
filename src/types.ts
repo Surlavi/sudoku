@@ -1,8 +1,7 @@
-export {};
-
 export const MAX_NUMBER = 9;
 export const CELLS_NUMBER = MAX_NUMBER * MAX_NUMBER;
 const CHAR_FOR_EMPTY_CELL = '.';
+const NUMBER_FOR_EMPTY_CELL = 0;
 
 function assertIndexInRange(value: number, desc: string): void {
   if (!Number.isInteger(value) || value < 0 || value >= MAX_NUMBER) {
@@ -123,6 +122,13 @@ export class Cell {
       return new Cell(coordinate, null);
     }
     return new Cell(coordinate, parseInt(char));
+  }
+
+  static fromNumber(coordinate: Coordinates, val: number): Cell {
+    if (val === NUMBER_FOR_EMPTY_CELL) {
+      return new Cell(coordinate, null);
+    }
+    return new Cell(coordinate, val);
   }
 }
 
@@ -251,6 +257,21 @@ export class GenericBoard<T extends Cell> {
       cells.push(Cell.fromChar(Coordinates.fromLinearIndex(i), chars[i]));
     }
 
+    return new GenericBoard(cells);
+  }
+
+  static createBoardFromUint8Array(
+    numbers: Readonly<Uint8Array>,
+  ): GenericBoard<Cell> {
+    if (numbers.length !== CELLS_NUMBER) {
+      throw new Error(
+        `Input char length ${numbers.length}, want ${CELLS_NUMBER}`,
+      );
+    }
+    const cells = new Array<Cell>();
+    for (let i = 0; i < CELLS_NUMBER; i++) {
+      cells.push(Cell.fromNumber(Coordinates.fromLinearIndex(i), numbers[i]));
+    }
     return new GenericBoard(cells);
   }
 

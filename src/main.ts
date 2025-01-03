@@ -1,10 +1,10 @@
 import init, * as wasm from '../wasm/pkg/sudoku_wasm.js';
 import * as theme from './theme.js';
-import {GenericBoard} from './types.js';
+import * as types from './types.js';
 import {GameController} from './game_controller.js';
 import {Game} from './game.js';
 
-async function waitForDifficulty(): Promise<number> {
+async function waitForDifficultyInput(): Promise<number> {
   return new Promise(resolve => {
     const btns = document.getElementsByClassName('btn-difficulty');
     Array.from(btns).forEach(btn => {
@@ -20,6 +20,7 @@ async function waitForDifficulty(): Promise<number> {
   });
 }
 
+// Switches to page `to` and hide other pages.
 function switchPage(to: HTMLElement) {
   Array.from(to.parentElement!.children).forEach(node => {
     node.classList.remove('visible');
@@ -38,7 +39,8 @@ async function main() {
   // Show the init page at first.
   switchPage(initPageDom);
 
-  const difficulty = await waitForDifficulty();
+  // Get the difficulty selected by the user.
+  const difficulty = await waitForDifficultyInput();
   const clues = (4 - difficulty) * 14 - 9;
 
   // Show the loading page.
@@ -48,28 +50,26 @@ async function main() {
     console.error('Error initializing WASM module:', error);
   });
 
+  // So that panic output will look better in the console.
   wasm.init_panic_hook();
   console.log('wasm loaded');
 
   // Create a random game.
-  console.log('Generating clues for %d', clues);
-  const puzzleArr = new Uint8Array(81);
+  console.log('Generating game with %d clues', clues);
+  const puzzleArr = new Uint8Array(types.CELLS_NUMBER);
   wasm.generate(clues, puzzleArr);
   console.log('Puzzle generated: ', puzzleArr);
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_resolve(answerArr);
   console.log('Answer generated: ', answerArr);
 
-  const answer = GenericBoard.createBoardFromString(
-    answerArr.join('').replaceAll('0', '.'),
-  );
-  const puzzle = GenericBoard.createBoardFromString(
-    puzzleArr.join('').replaceAll('0', '.'),
-  );
+  const answer = types.GenericBoard.createBoardFromUint8Array(answerArr);
+  const puzzle = types.GenericBoard.createBoardFromUint8Array(puzzleArr);
 
   const game = new Game(answer, puzzle);
   const controller = new GameController(game, gamePageDom);
 
+  // Register global keyboard and mouse event.
   // We can add logic to remove this listener when necessary in the future.
   window.addEventListener('keydown', ev => {
     if (controller.handleKeyDownEvent(ev)) {
