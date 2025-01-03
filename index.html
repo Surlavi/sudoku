@@ -8,7 +8,12 @@
   </head>
   <body>
     <div id="app-container">
-      <div class="page fading" id="welcome-page">Loading</div>
+      <div class="page fading" id="init-page">
+        <div class="btn-default btn-difficulty enabled" data-value="0">Easy</div>
+        <div class="btn-default btn-difficulty enabled" data-value="1">Normal</div>
+        <div class="btn-default btn-difficulty enabled" data-value="2">Hard</div>
+      </div>
+      <div class="page fading" id="loading-page">Loading</div>
       <div class="page fading" id="game-page"></div>
     </div>
     <script type="module" src="build/src/main.js"></script>

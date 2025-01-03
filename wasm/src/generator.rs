@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{cmp::min, time::Duration};
 use web_time::Instant;
 
 use rand::{seq::SliceRandom, thread_rng};
@@ -208,7 +208,7 @@ fn generate_puzzle_from_full_impl(
     false
 }
 
-fn drop_number_uniformly(answer: &ColorArray) -> ColorArray {
+fn drop_number_uniformly(answer: &ColorArray, target_clues_num: NodeIndexType) -> ColorArray {
     let mut pos = [[0u8;9];9];
     let mut cnt = [0 as u8; 9];
     for i in 0..81 {
@@ -220,8 +220,11 @@ fn drop_number_uniformly(answer: &ColorArray) -> ColorArray {
         pos[i as usize].shuffle(&mut thread_rng())
     }
     let mut ret = *answer;
+    let steps = min((NODE_COUNT - target_clues_num) / COLOR_COUNT, 6);
+    // println!("{}", target_clues_num);
+    // let steps = 6;
     for c in 0..COLOR_COUNT {
-        for j in 0..6 {
+        for j in 0..steps {
             let p = pos[c as usize ][j];
             ret[p as usize] = 0;
         }
@@ -236,7 +239,7 @@ fn generate_sequential(answer: &ColorArray, config: GeneratorConfig) -> ColorArr
         // for i in 0..(NODE_COUNT - config.target_clues_num as usize) {
         //     puzzle[nodes_to_remove[i] as usize] = 0;
         // }
-        let puzzle = drop_number_uniformly(answer);
+        let puzzle = drop_number_uniformly(answer, config.target_clues_num);
         match fast_solve(&puzzle, Some(answer)) {
             SolveResult::Invalid => panic!(),
             SolveResult::Multiple => continue,
@@ -265,7 +268,7 @@ fn generate_mix(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
             answer,
             GeneratorConfig {
                 timeout: None,
-                target_clues_num: 28,
+                target_clues_num: 27,
             },
         );
         // println!("{:?}", fast_solve(&puzzle, None));

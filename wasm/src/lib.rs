@@ -44,7 +44,7 @@ pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) {
     let puzzle = generate_puzzle_from_full(
         &answer,
         GeneratorConfig {
-            timeout: Some(Duration::from_secs(3)),
+            timeout: Some(Duration::from_secs(5)),
             target_clues_num: non_empty_cnt as NodeIndexType,
         },
     );

@@ -4,21 +4,45 @@ import {GenericBoard} from './types.js';
 import {GameController} from './game_controller.js';
 import {Game} from './game.js';
 
-function switchPage(from: HTMLElement | null, to: HTMLElement) {
-  if (from !== null) {
-    from.classList.remove('visible');
-  }
+async function waitForDifficulty(): Promise<number> {
+  return new Promise(resolve => {
+    const btns = document.getElementsByClassName('btn-difficulty');
+    Array.from(btns).forEach(btn => {
+      const val = parseInt((btn as HTMLElement).dataset['value']!);
+      if (Number.isNaN(val)) {
+        console.error('Invalid value');
+        return;
+      }
+      btn.addEventListener('click', () => {
+        resolve(val);
+      });
+    });
+  });
+}
+
+function switchPage(to: HTMLElement) {
+  Array.from(to.parentElement!.children).forEach(node => {
+    node.classList.remove('visible');
+  });
+
   to.classList.add('visible');
 }
 
 async function main() {
   theme.init();
 
+  const initPageDom = document.getElementById('init-page')!;
+  const loadingPageDom = document.getElementById('loading-page')!;
   const gamePageDom = document.getElementById('game-page')!;
-  const welcomePageDom = document.getElementById('welcome-page')!;
 
-  // Show the welcome page at first.
-  switchPage(gamePageDom, welcomePageDom);
+  // Show the init page at first.
+  switchPage(initPageDom);
+
+  const difficulty = await waitForDifficulty();
+  const clues = (4 - difficulty) * 14 - 9;
+
+  // Show the loading page.
+  switchPage(loadingPageDom);
 
   await init().catch(error => {
     console.error('Error initializing WASM module:', error);
@@ -26,22 +50,17 @@ async function main() {
 
   wasm.init_panic_hook();
   console.log('wasm loaded');
-  const arr = new Uint8Array([
-    4, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 0, 0, 0, 0, 5, 0, 0, 9, 0, 0, 8, 0, 0, 0, 0, 6, 0, 0, 0, 7, 0, 2, 0,
-    0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 7, 0, 0, 5, 0, 3, 0, 0, 0, 0, 4, 0, 9, 0, 0,
-    0, 0, 0, 0, 0, 0,
-  ]);
-  console.log(wasm.fast_resolve(arr));
-  console.log(arr);
 
   document.body.style.backgroundColor = theme.getCurrentTheme().colorBg;
 
   // Create a random game.
+  console.log('Generating clues for %d', clues);
   const puzzleArr = new Uint8Array(81);
-  wasm.generate(60, puzzleArr);
+  wasm.generate(clues, puzzleArr);
+  console.log('Puzzle generated: ', puzzleArr);
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_resolve(answerArr);
+  console.log('Answer generated: ', answerArr);
 
   const answer = GenericBoard.createBoardFromString(
     answerArr.join('').replaceAll('0', '.'),
@@ -65,7 +84,7 @@ async function main() {
   });
 
   // Show the game page.
-  switchPage(welcomePageDom, gamePageDom);
+  switchPage(gamePageDom);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
