@@ -1,7 +1,3 @@
-use std::usize;
-
-use rand::seq;
-
 const RANK: usize = 3;
 pub const COLOR_COUNT: usize = RANK * RANK;
 pub const NODE_COUNT: usize = COLOR_COUNT * COLOR_COUNT;
@@ -33,6 +29,8 @@ pub trait SudokuArray<T: SudokuValue + Copy> {
     fn to_color_array(&self) -> ColorArray;
 
     fn uncolored_node_count(&self) -> usize;
+
+    fn contains(&self, b: &Self) -> bool;
 }
 
 impl<T> SudokuArray<T> for [T; NODE_COUNT] where T: SudokuValue + Copy {
@@ -46,6 +44,15 @@ impl<T> SudokuArray<T> for [T; NODE_COUNT] where T: SudokuValue + Copy {
 
     fn uncolored_node_count(&self) -> usize {
         self.iter().filter(|n| n.to_color() == 0).count()
+    }
+    
+    fn contains(&self, b: &Self) -> bool {
+        for i in 0..NODE_COUNT {
+            if self[i].to_color() != b[i].to_color() && b[i].to_color() != 0 {
+                return false;
+            }
+        }
+        true
     }
 }
 

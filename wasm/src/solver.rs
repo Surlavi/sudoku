@@ -5,7 +5,7 @@ use std::{
 
 use crate::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 struct Colors {
     arr: [bool; COLOR_COUNT + 1],
     // cnt is a bottleneck, so cache the value instead.
@@ -107,7 +107,7 @@ mod neighbor_based {
 
     use super::*;
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq)]
     struct Node {
         color: u8,
         available_colors: Colors,
@@ -126,7 +126,7 @@ mod neighbor_based {
         }
     }
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq)]
     struct NodeArray(SudokuArrayType<Node>);
 
     impl Deref for NodeArray {
@@ -327,58 +327,75 @@ mod neighbor_based {
         }
     }
 
+    struct Solver<'a> {
+        node_arr: NodeArray,
+        hint_answer: Option<&'a ColorArray>,
+    }
+
+    impl Solver<'_> {
+        // Returns None if the input is invalid (not solvable).
+        fn new(node_arr: NodeArray, hint_answer: Option<&ColorArray>) -> Solver<'_> {
+            #[cfg(debug_assertions)]
+            {
+                let mut node_arr_copy = node_arr;
+                let result =  node_arr_copy.eliminate(None, &mut NodeStack::new());
+                if result.is_some() {
+                    panic!();
+                }
+                if node_arr != node_arr_copy {
+                    panic!();
+                }
+            }
+
+            Solver { node_arr: node_arr, hint_answer }
+        }
+
+        fn solve(&mut self) -> SolveResult {
+            let idx = self.node_arr.pick_up_uncolored_node_fast().unwrap();
+            let mut found_answer: Option<ColorArray> = None;
+            let mut colors_buf = [0; COLOR_COUNT];
+            let hint_color: Option<u8> = self.hint_answer.map(|x| x[idx]);
+            let colors_cnt = self.node_arr[idx]
+                .available_colors
+                .get_all_no_allocate(hint_color, &mut colors_buf);
+            for &c in &colors_buf[0..colors_cnt] {
+                let mut node_arr_copy = self.node_arr;
+                node_arr_copy[idx].color = c;
+                // println!("filling {} to {}\n", c, idx);
+                let result = node_arr_copy
+                    .eliminate_and_fill(Some(idx))
+                    .unwrap_or_else(|| {
+                        Solver::new(node_arr_copy, if Some(c) == hint_color {
+                            self.hint_answer
+                        } else {
+                            None
+                        }).solve()
+                    });
+                match result {
+                    SolveResult::Invalid => continue,
+                    SolveResult::Unique(answer) =>{ 
+                        if found_answer.is_some() {
+                            return SolveResult::Multiple;
+                        }
+                        found_answer = Some(answer)
+                    },
+                    SolveResult::Multiple => return SolveResult::Multiple,
+                }
+            }
+    
+            match found_answer {
+                Some(v) => SolveResult::Unique(v),
+                None => SolveResult::Invalid,
+            }
+        }
+    }
+
     pub fn solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
         let mut node_arr: NodeArray = NodeArray::from(puzzle);
         if let Some(result) = node_arr.eliminate_and_fill(None) {
             return result;
         }
-        solve_with_backtracing(node_arr, hint_answer)
-    }
-
-    fn solve_with_backtracing(
-        node_arr: NodeArray,
-        hint_answer: Option<&ColorArray>,
-    ) -> SolveResult {
-        // println!("{}\n", node_arr.uncolored_node_count());
-        let idx = node_arr.pick_up_uncolored_node_fast().unwrap();
-        let mut found_answer: Option<ColorArray> = None;
-        let mut colors_buf = [0; COLOR_COUNT];
-        let hint_color: Option<u8> = hint_answer.map(|x| x[idx]);
-        let colors_cnt = node_arr[idx]
-            .available_colors
-            .get_all_no_allocate(hint_color, &mut colors_buf);
-        for &c in &colors_buf[0..colors_cnt] {
-            let mut node_arr_copy = node_arr;
-            node_arr_copy[idx].color = c;
-            // println!("filling {} to {}\n", c, idx);
-            let result = node_arr_copy
-                .eliminate_and_fill(Some(idx))
-                .unwrap_or_else(|| {
-                    solve_with_backtracing(
-                        node_arr_copy,
-                        if Some(c) == hint_color {
-                            hint_answer
-                        } else {
-                            None
-                        },
-                    )
-                });
-            match result {
-                SolveResult::Invalid => continue,
-                SolveResult::Unique(answer) =>{ 
-                    if found_answer.is_some() {
-                        return SolveResult::Multiple;
-                    }
-                    found_answer = Some(answer)
-                },
-                SolveResult::Multiple => return SolveResult::Multiple,
-            }
-        }
-
-        match found_answer {
-            Some(v) => SolveResult::Unique(v),
-            None => SolveResult::Invalid,
-        }
+        Solver::new(node_arr, hint_answer).solve()
     }
 }
 
