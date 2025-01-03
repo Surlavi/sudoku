@@ -34,8 +34,7 @@ pub fn fast_resolve(board: &mut [u8]) -> Result<usize, JsError> {
             fill_color_array_to_js_type(&answer, board);
             Ok(1)
         }
-        SolveResult::Multiple(_) => todo!(),
-        SolveResult::Timeout => todo!(),
+        SolveResult::Multiple => todo!(),
     }
 }
 

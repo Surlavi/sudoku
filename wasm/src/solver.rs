@@ -341,7 +341,7 @@ mod neighbor_based {
     ) -> SolveResult {
         // println!("{}\n", node_arr.uncolored_node_count());
         let idx = node_arr.pick_up_uncolored_node_fast().unwrap();
-        let mut answers = vec![];
+        let mut found_answer: Option<ColorArray> = None;
         let mut colors_buf = [0; COLOR_COUNT];
         let hint_color: Option<u8> = hint_answer.map(|x| x[idx]);
         let colors_cnt = node_arr[idx]
@@ -365,26 +365,19 @@ mod neighbor_based {
                 });
             match result {
                 SolveResult::Invalid => continue,
-                SolveResult::Unique(answer) => {
-                    answers.push(answer);
-                }
-                SolveResult::Multiple(new_answers) => {
-                    answers.extend(new_answers);
-                }
-                SolveResult::Timeout => return SolveResult::Timeout,
-            }
-
-            // Now that we already have multiple answers, just return them. By definition, this function does not have to return all the valid answers.
-            if answers.len() > 1 {
-                return SolveResult::Multiple(answers);
+                SolveResult::Unique(answer) =>{ 
+                    if found_answer.is_some() {
+                        return SolveResult::Multiple;
+                    }
+                    found_answer = Some(answer)
+                },
+                SolveResult::Multiple => return SolveResult::Multiple,
             }
         }
 
-        match answers.len() {
-            0 => SolveResult::Invalid,
-            1 => SolveResult::Unique(answers[0]),
-            // Already handled above in the loop.
-            _ => panic!("Unexpected multiple answer found"),
+        match found_answer {
+            Some(v) => SolveResult::Unique(v),
+            None => SolveResult::Invalid,
         }
     }
 }
@@ -395,11 +388,8 @@ pub enum SolveResult {
     Invalid,
     // Unique result can be found.
     Unique(ColorArray),
-    // Multiple results can be found. Note that the list wrapped in this value may not be the complete list for all valid results.
-    Multiple(Vec<ColorArray>),
-    // Failed to valid result in the given timeout (there can be valid result or not).
-    #[allow(dead_code)]
-    Timeout,
+    // Multiple results can be found.
+    Multiple,
 }
 
 pub fn fast_solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {

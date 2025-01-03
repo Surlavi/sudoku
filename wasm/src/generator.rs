@@ -176,10 +176,7 @@ fn generate_puzzle_from_full_impl(
 ) -> bool {
     match fast_solve(arr, Some(answer)) {
         SolveResult::Invalid => panic!("Got an invalid array"),
-        SolveResult::Multiple(_) => {
-            return false;
-        }
-        SolveResult::Timeout => todo!(),
+        SolveResult::Multiple => return false,
         SolveResult::Unique(_) => {
             // This is the good case.
             tmp_result.update_puzzle(arr);
@@ -242,11 +239,8 @@ fn generate_sequential(answer: &ColorArray, config: GeneratorConfig) -> ColorArr
         let puzzle = drop_number_uniformly(answer);
         match fast_solve(&puzzle, Some(answer)) {
             SolveResult::Invalid => panic!(),
-            SolveResult::Multiple(_) => {
-                continue;
-            }
+            SolveResult::Multiple => continue,
             SolveResult::Unique(_) => return puzzle,
-            SolveResult::Timeout => todo!(),
         }
     }
 }
