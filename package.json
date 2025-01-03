@@ -1,8 +1,9 @@
 {
   "name": "sodoku",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
