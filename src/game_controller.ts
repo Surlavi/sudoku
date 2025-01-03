@@ -33,6 +33,7 @@ const HTML_CONTENT = `
 </div>
 <div id="board" style="position: relative;"></div>
 <div id="board-buttons">
+  <span class="btn-default enabled" id="btn-new-game">New Game</span>
   <span class="btn-default enabled" id="btn-quick-draft">Quick Draft</span>
 </div> 
 <div id="num-keyboard"></div>`;
@@ -72,6 +73,14 @@ export class GameController {
       ev.stopPropagation();
       this.game.recalculateDraftNumbers();
       this.boardUi.updateBoard();
+    });
+
+    const newGameBtn = document.getElementById('btn-new-game');
+    newGameBtn!.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (confirm('Abort the current game and start a new one?') === true) {
+        location.reload();
+      }
     });
   }
 
