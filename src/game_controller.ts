@@ -25,6 +25,7 @@ function keyCodeToDirection(code: string): MoveDirection {
 }
 
 const HTML_CONTENT = `
+<p id="notification" class="hidden">Prompt</p>
 <div id="board-banner">
   <span style="text-align: left;">Timer:&nbsp;<span id="value-timer">0:00</span>
   </span><span style="text-align: center;">Mistakes:&nbsp;<span id="value-mistakes">0</span>&nbsp;
@@ -37,7 +38,7 @@ const HTML_CONTENT = `
   <span class="btn-default enabled" id="btn-quick-draft">Quick Draft</span>
   <span class="btn-default enabled" id="btn-save">Save</span>
   <span class="btn-default enabled" id="btn-load">Load</span>
-</div> 
+</div>
 <div id="num-keyboard"></div>`;
 
 export class GameController {
@@ -101,6 +102,7 @@ export class GameController {
       ev.stopPropagation();
       game.saveState();
       updateSaveLoadBtnState();
+      this.showNotification('Saved');
     });
     loadBtn!.addEventListener('click', ev => {
       ev.stopPropagation();
@@ -111,6 +113,7 @@ export class GameController {
         game.loadState();
         this.boardUi.updateBoard(game.puzzleBoard);
         updateSaveLoadBtnState();
+        this.showNotification('Loaded');
       }
     });
   }
@@ -168,6 +171,15 @@ export class GameController {
 
   handleOutOfBoundClick() {
     this.boardUi.updateCursor(null);
+  }
+
+  private showNotification(msg: string) {
+    const dom = document.getElementById('notification')!;
+    dom.innerText = msg;
+    dom.classList.remove('hidden');
+    setTimeout(() => {
+      dom.classList.add('hidden');
+    }, 2500);
   }
 
   private refreshBanner(once = false) {

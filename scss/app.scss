@@ -109,8 +109,16 @@ body {
     box-sizing: border-box;
   }
 
+  #notification {
+    position: absolute;
+    text-align: center;
+    width: 100%;
+    color: var(--color-draft);
+    transition: 0.7s ease-in-out;
+  }
+
   #board-banner {
-    padding: 40px 5px 5px;
+    padding: 48px 5px 5px;
     position: relative;
     width: 100%;
   }
