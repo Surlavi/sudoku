@@ -1,4 +1,4 @@
-use std::{cmp::min, time::Duration};
+use std::{cmp::{max, min}, time::Duration};
 use web_time::Instant;
 
 use rand::{seq::SliceRandom, thread_rng};
@@ -268,7 +268,7 @@ fn generate_mix(answer: &ColorArray, config: GeneratorConfig) -> ColorArray {
             answer,
             GeneratorConfig {
                 timeout: None,
-                target_clues_num: 27,
+                target_clues_num: max(config.target_clues_num, 27),
             },
         );
         // println!("{:?}", fast_solve(&puzzle, None));
