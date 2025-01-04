@@ -119,6 +119,43 @@ class VirtualKeyboard {
     this.height = this.container.clientHeight;
 
     this.hide();
+
+    this.configureDraggable();
+  }
+
+  // Make the virtual keyboard draggable.
+  configureDraggable() {
+    let isDragging = false;
+    const c = this.container;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    c.addEventListener('mousedown', e => {
+      isDragging = true;
+      offsetX = e.clientX - c.offsetLeft;
+      offsetY = e.clientY - c.offsetTop;
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+
+      const x = e.clientX - offsetX;
+      const y = e.clientY - offsetY;
+      const maxX = window.innerWidth - c.offsetWidth;
+      const maxY = window.innerHeight - c.offsetHeight;
+      requestAnimationFrame(() => {
+        c.style.left = Math.min(Math.max(0, x), maxX) + 'px';
+        c.style.top = Math.min(Math.max(0, y), maxY) + 'px';
+      });
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    document.addEventListener('mouseleave', () => {
+      isDragging = false;
+    });
   }
 
   show(boardUi: BoardUi, coord: Coordinates) {
