@@ -188,34 +188,7 @@ impl<T: ColorSet> SudokuValue for SolvingNode<T> {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
-struct SolvingNodeArray(SudokuArrayType<SolvingNode<DefaultColorSetType>>);
-
-impl Deref for SolvingNodeArray {
-    type Target = SudokuArrayType<SolvingNode<DefaultColorSetType>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SolvingNodeArray {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl From<&ColorArray> for SolvingNodeArray {
-    fn from(value: &ColorArray) -> Self {
-        SolvingNodeArray(value.map(SolvingNode::from_color))
-    }
-}
-
-impl From<&SolvingNodeArray> for ColorArray {
-    fn from(val: &SolvingNodeArray) -> Self {
-        val.0.map(|n| n.color)
-    }
-}
+type SolvingNodeArray<T> = SudokuArrayType<SolvingNode<T>>;
 
 #[derive(Clone, Copy)]
 struct NodeStack {
@@ -251,16 +224,20 @@ impl NodeStack {
 }
 
 struct FastSolver<'a> {
-    node_arr: SolvingNodeArray,
+    node_arr: SolvingNodeArray<ColorBits>,
     hint_answer: Option<&'a ColorArray>,
 }
 
 impl FastSolver<'_> {
     fn solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
-        FastSolver::new(SolvingNodeArray::from(puzzle), hint_answer).eliminate_and_backtracing()
+        FastSolver::new(SolvingNodeArray::from_color_array(puzzle), hint_answer)
+            .eliminate_and_backtracing()
     }
 
-    fn new(node_arr: SolvingNodeArray, hint_answer: Option<&ColorArray>) -> FastSolver<'_> {
+    fn new(
+        node_arr: SolvingNodeArray<ColorBits>,
+        hint_answer: Option<&ColorArray>,
+    ) -> FastSolver<'_> {
         FastSolver {
             node_arr,
             hint_answer,
@@ -271,7 +248,7 @@ impl FastSolver<'_> {
         if let Some(result) = self.eliminate_and_fill(None) {
             return result;
         }
-        self.back_tracing()
+        self.backtracing()
     }
 
     // Returns the impossible node after the elimination.
@@ -452,7 +429,7 @@ impl FastSolver<'_> {
         min_idx
     }
 
-    fn back_tracing(&mut self) -> SolveResult {
+    fn backtracing(&mut self) -> SolveResult {
         let idx = self.pick_up_uncolored_node().unwrap();
         let mut found_answer: Option<ColorArray> = None;
         let mut colors_buf = [0; COLOR_COUNT];
@@ -473,7 +450,7 @@ impl FastSolver<'_> {
             );
             let result = child_solver
                 .eliminate_and_fill(Some(idx))
-                .unwrap_or_else(|| child_solver.back_tracing());
+                .unwrap_or_else(|| child_solver.backtracing());
             match result {
                 SolveResult::Invalid => continue,
                 SolveResult::Unique(answer) => {
