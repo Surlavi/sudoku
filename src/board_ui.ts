@@ -1,5 +1,5 @@
-import { Cell, Coordinates, mergeCellLists, SolvingCellState } from './types.js';
-import { SolvingBoard } from './solve.js';
+import {Cell, Coordinates, mergeCellLists, SolvingCellState} from './types.js';
+import {SolvingBoard} from './solve.js';
 import * as theme from './theme.js';
 
 interface LineStyle {
@@ -198,7 +198,7 @@ export class BoardUi {
   cursorCoord: Coordinates | null = null;
 
   focusedNumber: number | null = null;
-  focusedLevel: number = 0;
+  focusedLevel = 0;
 
   constructor(
     container: HTMLElement,
@@ -208,19 +208,16 @@ export class BoardUi {
   ) {
     this.container = container;
     this.gameBoard = gameBoard;
-    this.virtualKeyboard = new VirtualKeyboard(
-      this.container,
-      (v, b) => {
-        // Do not hide in draft mode.
-        if (!b) {
-          this.virtualKeyboard.hide();
-        }
-        digitInputCallback(v, b);
-        if (this.cursorCoord) {
-          this.virtualKeyboard.refreshNumbers(this, this.cursorCoord);
-        }
-      },
-    );
+    this.virtualKeyboard = new VirtualKeyboard(this.container, (v, b) => {
+      // Do not hide in draft mode.
+      if (!b) {
+        this.virtualKeyboard.hide();
+      }
+      digitInputCallback(v, b);
+      if (this.cursorCoord) {
+        this.virtualKeyboard.refreshNumbers(this, this.cursorCoord);
+      }
+    });
     this.updateConfig(config);
     container.style.height = `${container.clientWidth}px`;
   }
@@ -266,7 +263,7 @@ export class BoardUi {
         return;
       }
       this.container.removeChild(child);
-    })
+    });
 
     this.numberHighlightCanvas = this.createCanvas(1);
     this.neighHighlightCanvas = this.createCanvas(2);
@@ -292,7 +289,7 @@ export class BoardUi {
         this.updateCursor(coord);
 
         // If the cell is empty, show keyboard.
-        let cell = this.gameBoard.getCellByCoord(coord);
+        const cell = this.gameBoard.getCellByCoord(coord);
         if (cell.value === null) {
           this.virtualKeyboard.show(this, coord);
         } else {
@@ -313,7 +310,10 @@ export class BoardUi {
         const cell = this.gameBoard.getCellByCoord(new Coordinates(x, y));
         // Allow double click to cancel selection.
         this.updateFocusedNumber(
-          cell.value === this.focusedNumber && this.focusedLevel === 1 ? null : cell.value, 1
+          cell.value === this.focusedNumber && this.focusedLevel === 1
+            ? null
+            : cell.value,
+          1,
         );
       }
     });
@@ -356,7 +356,7 @@ export class BoardUi {
     }
   }
 
-  updateFocusedNumber(value: number | null, focusedLevel: number = 0) {
+  updateFocusedNumber(value: number | null, focusedLevel = 0) {
     this.focusedNumber = value;
     this.focusedLevel = focusedLevel;
     this.redrawHighlight();
@@ -467,7 +467,7 @@ export class BoardUi {
 
     const startPos = this.getCanvasPosForIdx(0);
     const endPos = this.getCanvasPosForIdx(9);
-    const style: LineStyle = { color: this.getTheme().colorPrefilled };
+    const style: LineStyle = {color: this.getTheme().colorPrefilled};
     const sqrBorderStyle: LineStyle = {
       color: this.getTheme().colorPrefilled,
       width: 3,
