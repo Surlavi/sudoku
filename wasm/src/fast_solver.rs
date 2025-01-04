@@ -254,8 +254,7 @@ pub fn check_puzzle_has_unique_answer(puzzle: &ColorArray, answer: &ColorArray) 
     match FastSolver::solve(puzzle, Some(answer)) {
         SolveResult::Invalid => panic!(),
         SolveResult::Unique(v) => {
-            #[cfg(debug_assertions)]
-            assert_eq!(*answer, v);
+            debug_assert_eq!(*answer, v);
             true
         }
         SolveResult::Multiple => false,

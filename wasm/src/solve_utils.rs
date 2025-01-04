@@ -41,11 +41,8 @@ pub trait ColorSet: Debug + Clone + Copy {
       hint_color: Option<u8>,
       output_buffer: &mut [u8; COLOR_COUNT],
   ) -> usize {
-      #[cfg(debug_assertions)]
       if let Some(c) = hint_color {
-          if !self.has(c) {
-              panic!()
-          }
+        debug_assert!(self.has(c));
       }
       let mut ret = 0;
       let start_idx = hint_color.unwrap_or(1) - 1;
