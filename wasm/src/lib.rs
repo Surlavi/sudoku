@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 mod core;
 mod generator;
 mod solve_utils;
-mod solver;
+mod fast_solver;
 
 use core::*;
 use solve_utils::SolveResult;
@@ -29,7 +29,7 @@ pub fn init_panic_hook() {
 #[wasm_bindgen]
 pub fn fast_solve(board: &mut [u8]) -> Result<usize, JsError> {
     let sudoku_array = new_color_array_from_js_type(board)?;
-    match solver::fast_solve(&sudoku_array) {
+    match fast_solver::solve(&sudoku_array) {
         SolveResult::Invalid => todo!(),
         SolveResult::Unique(answer) => {
             fill_color_array_to_js_type(&answer, board);

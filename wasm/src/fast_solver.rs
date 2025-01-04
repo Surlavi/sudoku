@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use crate::*;
 use solve_utils::*;
 
@@ -264,7 +262,7 @@ pub fn check_puzzle_has_unique_answer(puzzle: &ColorArray, answer: &ColorArray) 
     }
 }
 
-pub fn fast_solve(puzzle: &ColorArray) -> SolveResult {
+pub fn solve(puzzle: &ColorArray) -> SolveResult {
     FastSolver::solve(puzzle, None)
 }
 
@@ -298,7 +296,7 @@ mod tests {
             6, 9, 5, 4, 1, 7, 3, 8, 2, //
         ];
 
-        let result = fast_solve(&puzzle);
+        let result = solve(&puzzle);
         assert_eq!(result, SolveResult::Unique(answer));
     }
 
@@ -327,7 +325,7 @@ mod tests {
             9, 2, 7, 3, 4, 5, 1, 8, 6, //
         ];
 
-        let result = fast_solve(&puzzle);
+        let result = solve(&puzzle);
         assert_eq!(result, SolveResult::Unique(answer));
     }
 }
