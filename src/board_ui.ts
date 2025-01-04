@@ -139,7 +139,7 @@ class VirtualKeyboard {
     // Show it.
     const c = this.container;
     c.classList.remove('hidden');
-    console.log('display virtual keyboard at (%d, %d)', x, y);
+    console.debug('display virtual keyboard at (%d, %d)', x, y);
   }
 
   refreshNumbers(boardUi: BoardUi, coord: Coordinates) {
@@ -167,7 +167,7 @@ class VirtualKeyboard {
   }
 
   hide() {
-    console.log('hide virtual keyboard');
+    console.debug('hide virtual keyboard');
     this.container.classList.add('hidden');
   }
 }
@@ -309,7 +309,7 @@ export class BoardUi {
   }
 
   updateCursor(coord: Coordinates | null): void {
-    console.log('Set cursor to %s', coord);
+    console.debug('Set cursor to %s', coord);
 
     if (coord === null) {
       this.virtualKeyboard.hide();

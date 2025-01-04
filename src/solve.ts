@@ -46,13 +46,11 @@ export class SolvingBoard extends types.GenericBoard<SolvingCell> {
   }
 
   takeAction(action: Action) {
-    console.log(actionToString(action));
+    console.debug(actionToString(action));
     const cell = this.getCellByCoord(action.coordinate);
     switch (action.type) {
       case ActionType.REMOVE_DRAFT_NUMBER:
-        // console.log(`before ${cell.possibleValues.toString()}`)
         cell.removeDraftNumber(action.value);
-        // console.log(`after ${cell.possibleValues.toString()}`)
         break;
       case ActionType.FILL_IN_NUMBER:
         cell.fillNumber(action.value);
@@ -166,12 +164,12 @@ export function solve(board: types.Board) {
     const before = solvingBoard.getEmptyCellsCount();
     for (const solver of solvers) {
       const actions = solver.solve(solvingBoard);
-      console.log(actions.length);
+      console.debug(actions.length);
       solvingBoard.takeActions(actions);
     }
     const after = solvingBoard.getEmptyCellsCount();
 
-    console.log(solvingBoard.printBoard());
+    console.debug(solvingBoard.printBoard());
     if (before === after) {
       break;
     }

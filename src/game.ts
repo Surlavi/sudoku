@@ -26,7 +26,7 @@ export class Game {
   fillInNumber(coord: Coordinates, value: number) {
     const cell = this.puzzleBoard.cells[coord.linearIndex];
     if (cell.hasNumber()) {
-      console.log('%s already have number', coord);
+      console.debug('%s already have number', coord);
       return;
     }
 
@@ -53,7 +53,7 @@ export class Game {
   toggleDraftNumber(coord: Coordinates, value: number) {
     const cell = this.puzzleBoard.cells[coord.linearIndex];
     if (cell.hasNumber()) {
-      console.log('%s already have number', coord);
+      console.debug('%s already have number', coord);
       return;
     }
 

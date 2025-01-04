@@ -52,16 +52,16 @@ async function main() {
 
   // So that panic output will look better in the console.
   wasm.init_panic_hook();
-  console.log('wasm loaded');
+  console.debug('wasm loaded');
 
   // Create a random game.
-  console.log('Generating game with %d clues', clues);
+  console.debug('Generating game with %d clues', clues);
   const puzzleArr = new Uint8Array(types.CELLS_NUMBER);
   wasm.generate(clues, puzzleArr);
-  console.log('Puzzle generated: ', puzzleArr);
+  console.debug('Puzzle generated: ', puzzleArr);
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_solve(answerArr);
-  console.log('Answer generated: ', answerArr);
+  console.debug('Answer generated: ', answerArr);
 
   const answer = types.GenericBoard.createBoardFromUint8Array(answerArr);
   const puzzle = types.GenericBoard.createBoardFromUint8Array(puzzleArr);

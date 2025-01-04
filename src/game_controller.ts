@@ -127,7 +127,7 @@ export class GameController {
 
   // Handle keyboard event for the game. Returns whether the event is consumed by this component.
   handleKeyDownEvent(ev: KeyboardEvent): boolean {
-    console.log(ev);
+    console.debug(ev);
     switch (ev.code) {
       case 'ArrowUp':
       case 'ArrowDown':
@@ -168,7 +168,7 @@ export class GameController {
     if (this.boardUi.cursorCoord === null) {
       return;
     }
-    console.log('hit %d', value);
+    console.debug('hit %d', value);
     if (!draftMode) {
       this.game.fillInNumber(this.boardUi.cursorCoord, value);
     } else {
