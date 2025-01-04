@@ -3,11 +3,12 @@ use wasm_bindgen::prelude::*;
 
 mod core;
 mod generator;
+mod solve_utils;
 mod solver;
 
 use core::*;
+use solve_utils::SolveResult;
 use std::time::Duration;
-use solver::SolveResult;
 
 pub use generator::generate_puzzle;
 pub use generator::GeneratorConfig;
