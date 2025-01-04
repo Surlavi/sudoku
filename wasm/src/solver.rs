@@ -1,7 +1,4 @@
-use std::{
-    fmt::Debug,
-    ops::{Deref, DerefMut},
-};
+use std::fmt::Debug;
 
 use crate::*;
 
@@ -166,8 +163,6 @@ impl ColorSet for ColorBits {
         self.count()
     }
 }
-
-type DefaultColorSetType = ColorBits;
 
 #[derive(Clone, Copy, PartialEq)]
 struct SolvingNode<T: ColorSet> {
