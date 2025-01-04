@@ -335,6 +335,6 @@ mod tests {
         );
         assert!(puzzle.count_clues() < 27);
 
-        println!("{}", simple_score(&puzzle));
+        println!("Score: {}", simple_score(&puzzle));
     }
 }

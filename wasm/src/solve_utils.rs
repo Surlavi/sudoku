@@ -1,4 +1,7 @@
-use std::{fmt::Debug, ops::{BitOr, BitOrAssign}};
+use std::{
+    fmt::Debug,
+    ops::{BitOr, BitOrAssign},
+};
 
 use crate::*;
 
@@ -64,7 +67,7 @@ pub trait ColorSet: Debug + Clone + Copy {
     }
 
     fn clear(&mut self) {
-        for i in 1..COLOR_COUNT+1 {
+        for i in 1..COLOR_COUNT + 1 {
             self.del(i as ColorType);
         }
     }
@@ -178,7 +181,6 @@ impl ColorSet for ColorBits {
     }
 }
 
-
 impl Debug for ColorBits {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -191,12 +193,13 @@ impl Debug for ColorBits {
     }
 }
 
-
 impl BitOr for ColorBits {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
-        return ColorBits{ colors: self.colors | rhs.colors }
+        return ColorBits {
+            colors: self.colors | rhs.colors,
+        };
     }
 }
 
@@ -222,6 +225,15 @@ impl<T: ColorSet> SudokuValue for SolvingNode<T> {
 
     fn to_color(&self) -> ColorType {
         self.color
+    }
+}
+
+impl<T: ColorSet> Debug for SolvingNode<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SolvingNode")
+            .field("color", &self.color)
+            .field("available_colors", &self.available_colors)
+            .finish()
     }
 }
 

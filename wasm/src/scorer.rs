@@ -2,22 +2,32 @@ use crate::*;
 use itertools::Itertools;
 use solve_utils::*;
 
+// About score -- we normalize the score in the following way:
+// - All the solvers can be considered as eliminating some states from the
+//   board, by dropping a draft number.
+// - The upper bound of the draft numbers are 9*9*9=729.
+// - We give each solver a weight (0..=100), which represents the cognitive
+//   overhead of the solver.
+// - So the score of the puzzle = sum(weight * #eliminated_state).
+
 type NodeArray = SolvingNodeArray<ColorBits>;
 
 fn eliminate_color_at_neighs_to_idx(
     node_arr: &mut NodeArray,
     color: ColorType,
     idx: NodeIndexType,
-) -> bool {
-    let mut success = false;
+) -> i32 {
+    let mut cnt = 0;
     for &j in NEIGHBOR_ARRAY_MAP[idx].iter() {
-        success |= node_arr[j].available_colors.del(color);
+        if node_arr[j].available_colors.del(color) {
+            cnt += 1;
+        }
     }
-    success
+    cnt
 }
 
 trait PartialScorer {
-    // Returns 0 if the scorer cannot simplify node_arr.
+    // Returns the number of state eliminated.
     fn work(&self, node_arr: &mut NodeArray) -> i32;
 }
 
@@ -25,18 +35,14 @@ struct DraftEliminator {}
 
 impl PartialScorer for DraftEliminator {
     fn work(&self, node_arr: &mut NodeArray) -> i32 {
-        let mut success = false;
+        let mut cnt = 0;
         for i in 0..NODE_COUNT {
             if node_arr[i].color == 0 {
                 continue;
             }
-            success |= eliminate_color_at_neighs_to_idx(node_arr, node_arr[i].color, i);
+            cnt += eliminate_color_at_neighs_to_idx(node_arr, node_arr[i].color, i);
         }
-        if success {
-            1
-        } else {
-            0
-        }
+        cnt
     }
 }
 
@@ -49,6 +55,7 @@ impl PartialScorer for UniqueDraftFiller {
             if node_arr[i].color != 0 {
                 continue;
             }
+            debug_assert_ne!(node_arr[i].available_colors.count(), 0);
             if let Some(v) = node_arr[i].available_colors.get_unique() {
                 node_arr[i].color = v;
                 cnt += 1;
@@ -73,7 +80,7 @@ fn eliminate_grouped_colors_from_other_cells(
         return 0;
     }
 
-    let mut found_group_cnt = 0;
+    let mut dropped_draft_number_cnt = 0;
 
     for group in candidates.iter().combinations(group_size) {
         let mut super_set = ColorBits::new(false);
@@ -83,23 +90,19 @@ fn eliminate_grouped_colors_from_other_cells(
         if super_set.count() != group_size {
             continue;
         }
-        let mut removed_draft_num = 0;
         for &idx in candidates.iter() {
             if group.iter().find(|&&&x| x == idx).is_some() {
                 continue;
             }
             for c in super_set.get_all() {
                 if node_arr[idx].available_colors.del(c) {
-                    removed_draft_num += 1;
+                    dropped_draft_number_cnt += 1;
                 }
             }
         }
-        if removed_draft_num > 0 {
-            found_group_cnt += 1;
-        }
     }
 
-    return found_group_cnt;
+    return dropped_draft_number_cnt;
 }
 
 fn eliminate_grouped_colors_from_grouped_cells(
@@ -125,38 +128,37 @@ fn eliminate_grouped_colors_from_grouped_cells(
         }
     }
 
-    let mut found_group_cnt: i32 = 0;
+    let mut color_set = ColorBits::new(false);
+    for idx in candidates.iter() {
+        color_set |= node_arr[*idx].available_colors;
+    }
 
-    for group in (1..(COLOR_COUNT + 1)).combinations(group_size) {
+    let mut dropped_draft_number_cnt: i32 = 0;
+    for group in color_set.get_all().into_iter().combinations(group_size) {
         let mut super_set = 0_u16;
         for &c in group.iter() {
-            super_set |= color_to_node_idx_idx[c];
+            super_set |= color_to_node_idx_idx[c as usize];
         }
         if super_set.count_ones() != group_size as u32 {
             continue;
         }
-        let mut removed_draft_num = 0;
         for i in 0..COLOR_COUNT {
             if (1 << i) & super_set == 0 {
                 continue;
             }
             let node = &mut node_arr[candidates[i]];
             for c in 1..COLOR_COUNT + 1 {
-                if group.contains(&c) {
+                if group.contains(&(c as u8)) {
                     continue;
                 }
                 if node.available_colors.del(c as u8) {
-                    // println!("rm {:?} {:?}", candidates[i], node.available_colors);
-                    removed_draft_num += 1;
+                    dropped_draft_number_cnt += 1;
                 }
             }
         }
-        if removed_draft_num > 0 {
-            found_group_cnt += 1;
-        }
     }
 
-    return found_group_cnt;
+    return dropped_draft_number_cnt;
 }
 
 struct NonHiddenGroupEliminator {
@@ -184,7 +186,7 @@ impl PartialScorer for NonHiddenGroupEliminator {
             );
         }
 
-        return ret * 10 * self.group_size as i32;
+        ret
     }
 }
 
@@ -213,7 +215,7 @@ impl PartialScorer for HiddenGroupEliminator {
             );
         }
 
-        return ret * 20 * self.group_size as i32;
+        ret
     }
 }
 
@@ -231,12 +233,12 @@ impl PartialScorer for NonBacktracingScorer {
         let hidden_group_eliminator_2 = HiddenGroupEliminator { group_size: 2 };
         let hidden_group_eliminator_3 = HiddenGroupEliminator { group_size: 3 };
 
-        let mut eliminate_and_fill = |node_arr: &mut NodeArray, score: &mut i32| -> bool {
+        let eliminate_and_fill = |node_arr: &mut NodeArray, score: &mut i32| -> bool {
             let start_score = *score;
             loop {
                 let last_score = *score;
-                *score += basic_eliminator.work(node_arr);
-                *score += basic_filler.work(node_arr);
+                *score += 1 * basic_eliminator.work(node_arr);
+                *score += 1 * basic_filler.work(node_arr);
                 if last_score == *score {
                     break;
                 }
@@ -248,27 +250,40 @@ impl PartialScorer for NonBacktracingScorer {
             if !eliminate_and_fill(node_arr, &mut score) {
                 break;
             }
-            score += non_hidden_group_eliminator_2.work(node_arr);
-            score += non_hidden_group_eliminator_3.work(node_arr);
-            score += hidden_group_eliminator_1.work(node_arr);
-            score += hidden_group_eliminator_2.work(node_arr);
-            score += hidden_group_eliminator_3.work(node_arr);
+            score += 2 * hidden_group_eliminator_1.work(node_arr);
+            score += 4 * non_hidden_group_eliminator_2.work(node_arr);
+            score += 8 * hidden_group_eliminator_2.work(node_arr);
+            score += 9 * non_hidden_group_eliminator_3.work(node_arr);
+            score += 18 * hidden_group_eliminator_3.work(node_arr);
         }
 
         return score;
     }
 }
 
+fn count_remaining_state(node_arr: &NodeArray) -> i32 {
+    let mut cnt = 0;
+    for &c in node_arr {
+        if c.color != 0 {
+            continue;
+        }
+        cnt += c.available_colors.count() as i32;
+    }
+    cnt
+}
+
+// Max score: 10000.
 pub fn simple_score(puzzle: &ColorArray) -> i32 {
     let mut node_arr = NodeArray::from_color_array(puzzle);
     let scorer = NonBacktracingScorer {};
     let score = scorer.work(&mut node_arr);
-    if !node_arr.validate_colors(true) {
+    let total_score = if !node_arr.validate_colors(true) {
         // If need backtracing.
-        return score + 500 * node_arr.uncolored_node_count() as i32;
+        score + 100 * count_remaining_state(&node_arr)
     } else {
-        return score;
-    }
+        score
+    };
+    total_score * 100 / (9 * 9 * 9)
 }
 
 mod tests {
@@ -285,7 +300,6 @@ mod tests {
 
         let solver = HiddenGroupEliminator { group_size: 1 };
         assert!(solver.work(&mut node_arr) > 0);
-        // println!("{:?}", node_arr[0].available_colors);
         assert_eq!(node_arr[0].available_colors.get_unique(), Some(1));
     }
 
@@ -300,7 +314,6 @@ mod tests {
 
         let solver = HiddenGroupEliminator { group_size: 2 };
         assert!(solver.work(&mut node_arr) > 0);
-        // println!("{:?}", node_arr[0].available_colors);
         assert_eq!(node_arr[0].available_colors.get_all(), vec![1, 2]);
         assert_eq!(node_arr[8].available_colors.get_all(), vec![1, 2]);
         assert_eq!(node_arr[1].available_colors.count(), 7);
@@ -318,7 +331,6 @@ mod tests {
 
         let solver = NonHiddenGroupEliminator { group_size: 2 };
         assert!(solver.work(&mut node_arr) > 0);
-        // println!("{:?}", node_arr[0].available_colors);
         assert_eq!(
             node_arr[0].available_colors.get_all(),
             vec![1, 2, 3, 4, 5, 6, 7]
