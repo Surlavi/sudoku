@@ -330,5 +330,4 @@ mod tests {
         );
         assert!(puzzle.count_clues() < 27);
     }
-
 }

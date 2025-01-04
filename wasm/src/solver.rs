@@ -5,22 +5,76 @@ use std::{
 
 use crate::*;
 
+trait ColorSet: Debug + Clone + Copy {
+    fn new(val: bool) -> Self;
+
+    fn set(&mut self, color: ColorType);
+    fn del(&mut self, color: ColorType) -> bool;
+    fn has(&self, color: ColorType) -> bool;
+    fn count(&self) -> usize;
+    fn minus(&mut self, other: &Self) -> usize;
+
+    fn get_unique(&self) -> Option<u8> {
+        let mut ret = None;
+        for i in 1..COLOR_COUNT + 1 {
+            if !self.has(i as u8) {
+                continue;
+            }
+            match ret {
+                Some(_) => return None,
+                None => ret = Some(i as u8),
+            }
+        }
+        ret
+    }
+
+    fn get_all_no_allocate(
+        &self,
+        hint_color: Option<u8>,
+        output_buffer: &mut [u8; COLOR_COUNT],
+    ) -> usize {
+        #[cfg(debug_assertions)]
+        if let Some(c) = hint_color {
+            if !self.has(c) {
+                panic!()
+            }
+        }
+        let mut ret = 0;
+        let start_idx = hint_color.unwrap_or(1) - 1;
+        for j in 0..COLOR_COUNT {
+            // Note: start from the hint seems to be faster.
+            let i = (start_idx + j as u8) % (COLOR_COUNT as u8) + 1;
+            if self.has(i) {
+                output_buffer[ret] = i;
+                ret += 1;
+            }
+        }
+        ret
+    }
+
+    fn get_all(&self) -> Vec<u8> {
+        let mut buffer = [0; COLOR_COUNT];
+        let cnt = self.get_all_no_allocate(None, &mut buffer);
+        buffer[0..cnt].to_vec()
+    }
+}
+
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
-struct Colors {
+struct ColorVec {
     arr: [bool; COLOR_COUNT + 1],
     // cnt is a bottleneck, so cache the value instead.
     cnt: usize,
 }
 
-impl Colors {
+impl ColorSet for ColorVec {
     fn new(val: bool) -> Self {
-        Colors {
+        ColorVec {
             arr: [val; COLOR_COUNT + 1],
             cnt: if val { COLOR_COUNT } else { 0 },
         }
     }
 
-    #[allow(dead_code)]
     fn set(&mut self, color: u8) {
         if !self.arr[color as usize] {
             self.cnt += 1
@@ -37,7 +91,6 @@ impl Colors {
         val
     }
 
-    #[allow(dead_code)]
     fn has(&self, color: u8) -> bool {
         self.arr[color as usize]
     }
@@ -46,46 +99,8 @@ impl Colors {
         self.cnt
     }
 
-    fn get_unique(&self) -> Option<u8> {
-        let mut ret = None;
+    fn minus(&mut self, other: &ColorVec) -> usize {
         for i in 1..COLOR_COUNT + 1 {
-            if !self.arr[i] {
-                continue;
-            }
-            match ret {
-                Some(_) => return None,
-                None => ret = Some(i as u8),
-            }
-        }
-        ret
-    }
-
-    fn get_all_no_allocate(
-        &self,
-        hint_color: Option<u8>,
-        output_buffer: &mut [u8; COLOR_COUNT],
-    ) -> usize {
-        // Uncomment for debugging.
-        // if let Some(c) = hint_color {
-        //     if !self.arr[c as usize] {
-        //         panic!()
-        //     }
-        // }
-        let mut ret = 0;
-        let start_idx = hint_color.unwrap_or(1) - 1;
-        for j in 0..COLOR_COUNT {
-            // Note: start from the hint seems to be faster.
-            let i = (start_idx + j as u8) % (COLOR_COUNT as u8) + 1;
-            if self.arr[i as usize] {
-                output_buffer[ret] = i;
-                ret += 1;
-            }
-        }
-        ret
-    }
-
-    fn minus(&mut self, other: &Colors) -> usize {
-        for i in 1..COLOR_COUNT+1 {
             if self.arr[i] && other.arr[i] {
                 self.arr[i] = false;
                 self.cnt -= 1;
@@ -93,15 +108,9 @@ impl Colors {
         }
         self.count()
     }
-
-    fn get_all(&self) -> Vec<u8> {
-        let mut buffer = [0; COLOR_COUNT];
-        let cnt = self.get_all_no_allocate(None, &mut buffer);
-        buffer[0..cnt].to_vec()
-    }
 }
 
-impl Debug for Colors {
+impl Debug for ColorVec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -113,17 +122,64 @@ impl Debug for Colors {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
-struct SolvingNode {
-    color: u8,
-    available_colors: Colors,
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct ColorBits {
+    colors: u16,
 }
 
-impl SudokuValue for SolvingNode {
+const fn bit_val(color: u8) -> u16 {
+    debug_assert!(color <= COLOR_COUNT as u8 && color > 0);
+    1 << (color - 1)
+}
+
+impl ColorSet for ColorBits {
+    fn new(val: bool) -> Self {
+        if val {
+            ColorBits {
+                colors: (1 << COLOR_COUNT) - 1,
+            }
+        } else {
+            ColorBits { colors: 0 }
+        }
+    }
+
+    fn set(&mut self, color: ColorType) {
+        self.colors |= bit_val(color);
+    }
+
+    fn del(&mut self, color: ColorType) -> bool {
+        let ret = self.has(color);
+        self.colors &= !bit_val(color);
+        return ret;
+    }
+
+    fn has(&self, color: ColorType) -> bool {
+        (self.colors & bit_val(color)) > 0
+    }
+
+    fn count(&self) -> usize {
+        self.colors.count_ones() as usize
+    }
+
+    fn minus(&mut self, other: &Self) -> usize {
+        self.colors &= other.colors;
+        self.count()
+    }
+}
+
+type DefaultColorSetType = ColorBits;
+
+#[derive(Clone, Copy, PartialEq)]
+struct SolvingNode<T: ColorSet> {
+    color: u8,
+    available_colors: T,
+}
+
+impl<T: ColorSet> SudokuValue for SolvingNode<T> {
     fn from_color(number: ColorType) -> Self {
         Self {
             color: number,
-            available_colors: Colors::new(true),
+            available_colors: T::new(true),
         }
     }
 
@@ -133,10 +189,10 @@ impl SudokuValue for SolvingNode {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-struct SolvingNodeArray(SudokuArrayType<SolvingNode>);
+struct SolvingNodeArray(SudokuArrayType<SolvingNode<DefaultColorSetType>>);
 
 impl Deref for SolvingNodeArray {
-    type Target = SudokuArrayType<SolvingNode>;
+    type Target = SudokuArrayType<SolvingNode<DefaultColorSetType>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

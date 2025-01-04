@@ -79,7 +79,7 @@ where
         }
         true
     }
-    
+
     fn count_clues(&self) -> usize {
         let mut cnt = 0;
         for i in 0..NODE_COUNT {
