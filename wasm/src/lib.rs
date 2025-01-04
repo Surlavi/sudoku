@@ -6,8 +6,8 @@ mod generator;
 mod solver;
 
 use core::*;
-use solver::*;
 use std::time::Duration;
+use solver::SolveResult;
 
 pub use generator::generate_puzzle;
 pub use generator::GeneratorConfig;
@@ -26,9 +26,9 @@ pub fn init_panic_hook() {
 }
 
 #[wasm_bindgen]
-pub fn fast_resolve(board: &mut [u8]) -> Result<usize, JsError> {
+pub fn fast_solve(board: &mut [u8]) -> Result<usize, JsError> {
     let sudoku_array = new_color_array_from_js_type(board)?;
-    match fast_solve(&sudoku_array) {
+    match solver::fast_solve(&sudoku_array) {
         SolveResult::Invalid => todo!(),
         SolveResult::Unique(answer) => {
             fill_color_array_to_js_type(&answer, board);

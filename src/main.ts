@@ -60,7 +60,7 @@ async function main() {
   wasm.generate(clues, puzzleArr);
   console.log('Puzzle generated: ', puzzleArr);
   const answerArr = new Uint8Array(puzzleArr);
-  wasm.fast_resolve(answerArr);
+  wasm.fast_solve(answerArr);
   console.log('Answer generated: ', answerArr);
 
   const answer = types.GenericBoard.createBoardFromUint8Array(answerArr);

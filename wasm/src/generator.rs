@@ -7,6 +7,7 @@ use web_time::Instant;
 use rand::{seq::SliceRandom, thread_rng};
 
 use crate::*;
+use solver::*;
 
 #[derive(Clone, Copy)]
 pub struct GeneratorConfig {
@@ -247,7 +248,7 @@ pub fn generate_puzzle_from_answer(answer: &ColorArray, config: GeneratorConfig)
     let puzzle = generate_puzzle_from_answer_impl(answer, config);
 
     // Validate the puzzle again.
-    match fast_solve(&puzzle) {
+    match solver::fast_solve(&puzzle) {
         SolveResult::Unique(result) => {
             if result != *answer {
                 panic!("Invalid state");
