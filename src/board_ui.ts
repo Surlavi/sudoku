@@ -130,32 +130,44 @@ class VirtualKeyboard {
     let offsetX = 0;
     let offsetY = 0;
 
-    c.addEventListener('mousedown', e => {
+    const handleStart = (e: MouseEvent | TouchEvent) => {
       isDragging = true;
-      offsetX = e.clientX - c.offsetLeft;
-      offsetY = e.clientY - c.offsetTop;
-    });
+      offsetX =
+        (e instanceof MouseEvent ? e.clientX : e.touches[0].clientX) -
+        c.offsetLeft;
+      offsetY =
+        (e instanceof MouseEvent ? e.clientY : e.touches[0].clientY) -
+        c.offsetTop;
+    };
 
-    document.addEventListener('mousemove', e => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
 
-      const x = e.clientX - offsetX;
-      const y = e.clientY - offsetY;
+      const x =
+        (e instanceof MouseEvent ? e.clientX : e.touches[0].clientX) - offsetX;
+      const y =
+        (e instanceof MouseEvent ? e.clientY : e.touches[0].clientY) - offsetY;
       const maxX = window.innerWidth - c.offsetWidth;
       const maxY = window.innerHeight - c.offsetHeight;
       requestAnimationFrame(() => {
         c.style.left = Math.min(Math.max(0, x), maxX) + 'px';
         c.style.top = Math.min(Math.max(0, y), maxY) + 'px';
       });
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    const handleEnd = () => {
       isDragging = false;
-    });
+    };
 
-    document.addEventListener('mouseleave', () => {
-      isDragging = false;
-    });
+    c.addEventListener('mousedown', handleStart);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('mouseleave', handleEnd);
+
+    c.addEventListener('touchstart', handleStart);
+    document.addEventListener('touchmove', handleMove);
+    document.addEventListener('touchend', handleEnd);
+    document.addEventListener('touchcancel', handleEnd);
   }
 
   show(boardUi: BoardUi, coord: Coordinates) {
