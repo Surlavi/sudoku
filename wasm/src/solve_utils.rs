@@ -15,6 +15,7 @@ pub enum SolveResult {
 pub trait ColorSet: Debug + Clone + Copy {
   fn new(val: bool) -> Self;
 
+  #[allow(dead_code)]
   fn set(&mut self, color: ColorType);
   fn del(&mut self, color: ColorType) -> bool;
   fn has(&self, color: ColorType) -> bool;
