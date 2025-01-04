@@ -1,5 +1,5 @@
-import {Cell, Coordinates, mergeCellLists, SolvingCellState} from './types.js';
-import {SolvingBoard} from './solve.js';
+import { Cell, Coordinates, mergeCellLists, SolvingCellState } from './types.js';
+import { SolvingBoard } from './solve.js';
 import * as theme from './theme.js';
 
 interface LineStyle {
@@ -198,6 +198,7 @@ export class BoardUi {
   cursorCoord: Coordinates | null = null;
 
   focusedNumber: number | null = null;
+  focusedLevel: number = 0;
 
   constructor(
     container: HTMLElement,
@@ -291,8 +292,11 @@ export class BoardUi {
         this.updateCursor(coord);
 
         // If the cell is empty, show keyboard.
-        if (this.gameBoard.getCellByCoord(coord).value === null) {
+        let cell = this.gameBoard.getCellByCoord(coord);
+        if (cell.value === null) {
           this.virtualKeyboard.show(this, coord);
+        } else {
+          this.updateFocusedNumber(cell.value, 0);
         }
       }
     });
@@ -309,7 +313,7 @@ export class BoardUi {
         const cell = this.gameBoard.getCellByCoord(new Coordinates(x, y));
         // Allow double click to cancel selection.
         this.updateFocusedNumber(
-          cell.value === this.focusedNumber ? null : cell.value,
+          cell.value === this.focusedNumber && this.focusedLevel === 1 ? null : cell.value, 1
         );
       }
     });
@@ -352,8 +356,9 @@ export class BoardUi {
     }
   }
 
-  updateFocusedNumber(value: number | null) {
+  updateFocusedNumber(value: number | null, focusedLevel: number = 0) {
     this.focusedNumber = value;
+    this.focusedLevel = focusedLevel;
     this.redrawHighlight();
     this.redrawNumbers();
   }
@@ -429,7 +434,7 @@ export class BoardUi {
         return c.value === this.focusedNumber;
       });
       let cells: ReadonlyArray<Cell> = numberCells.slice();
-      if (this.config.highlightNumberNeighbors) {
+      if (this.config.highlightNumberNeighbors && this.focusedLevel === 1) {
         const cellArrays = numberCells.map((c: Cell) => {
           return this.gameBoard.getCellsByNeighborToCoord(c.coordinate);
         });
@@ -462,7 +467,7 @@ export class BoardUi {
 
     const startPos = this.getCanvasPosForIdx(0);
     const endPos = this.getCanvasPosForIdx(9);
-    const style: LineStyle = {color: this.getTheme().colorPrefilled};
+    const style: LineStyle = { color: this.getTheme().colorPrefilled };
     const sqrBorderStyle: LineStyle = {
       color: this.getTheme().colorPrefilled,
       width: 3,
