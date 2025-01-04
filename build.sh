@@ -1,3 +1,8 @@
+#!/bin/bash
+
+# Stop on the first failure.
+set -e
+
 cd wasm
 wasm-pack build --target web
 cd ..
