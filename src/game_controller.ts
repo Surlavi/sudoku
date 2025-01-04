@@ -37,8 +37,7 @@ const HTML_CONTENT = `
   <span class="btn-default enabled" id="btn-quick-draft">Quick Draft</span>
   <span class="btn-default enabled" id="btn-save">Save</span>
   <span class="btn-default enabled" id="btn-load">Load</span>
-</div>
-<div id="num-keyboard"></div>`;
+</div>`;
 
 /**
  * In the UI of the game page, there are mainly 3 parts.
@@ -63,11 +62,9 @@ export class GameController {
 
     // Create the board drawing.
     const boardDom = document.getElementById('board')!;
-    const keyboardDom = document.getElementById('num-keyboard')!;
     this.boardUi = new BoardUi(
       boardDom,
       game.puzzleBoard,
-      keyboardDom,
       this.handleNumberInput.bind(this),
       {
         size: boardDom.clientWidth,

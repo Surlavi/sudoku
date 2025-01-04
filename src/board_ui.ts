@@ -72,6 +72,8 @@ const VIRTUAL_KB_HTML = `
 
 type KeyInputCallback = (value: number, draftMode: boolean) => void;
 
+const VIRTUAL_KEYBOARD_ID = 'num-keyboard';
+
 // Shows a keyboard for inputting digits for the Sudoku game.
 class VirtualKeyboard {
   private readonly cb: KeyInputCallback;
@@ -80,10 +82,12 @@ class VirtualKeyboard {
   private width: number;
   private height: number;
 
-  constructor(container: HTMLElement, keyInputCallback: KeyInputCallback) {
-    this.container = container;
-    container.setHTMLUnsafe(VIRTUAL_KB_HTML);
-    container.classList.add('fading-fast');
+  constructor(parent: HTMLElement, keyInputCallback: KeyInputCallback) {
+    this.container = document.createElement('div');
+    this.container.id = VIRTUAL_KEYBOARD_ID;
+    parent.appendChild(this.container);
+    this.container.setHTMLUnsafe(VIRTUAL_KB_HTML);
+    this.container.classList.add('fading-fast');
     this.cb = keyInputCallback;
 
     const keyboard = document.getElementById('keyboard')!;
@@ -106,7 +110,7 @@ class VirtualKeyboard {
     }
 
     // Scope the click events.
-    container.addEventListener('click', ev => {
+    this.container.addEventListener('click', ev => {
       ev.stopPropagation();
     });
 
@@ -125,11 +129,12 @@ class VirtualKeyboard {
     const x1 = boardUi.getCanvasPosForIdx(coord.x);
     const x2 = boardUi.getCanvasPosForIdx(coord.x + 1);
     const y1 = boardUi.getCanvasPosForIdx(coord.y);
+    const y2 = boardUi.getCanvasPosForIdx(coord.y + 1);
 
     const MARGIN = 8;
 
-    const x = x1 - w - MARGIN > 0 ? x1 - w - MARGIN : x2 + MARGIN;
-    const y = y1 + h < boardUi.config.size ? y1 + 30 : boardUi.config.size - h;
+    const x = x1 - w - MARGIN > 0 ? x1 - w - MARGIN : x2 + MARGIN / 2;
+    const y = y2 + h < boardUi.config.size ? y2 + MARGIN / 2 : y1 - MARGIN - h;
 
     this.container.style.left = `${x}px`;
     this.container.style.top = `${y}px`;
@@ -197,14 +202,13 @@ export class BoardUi {
   constructor(
     container: HTMLElement,
     gameBoard: SolvingBoard,
-    virtualKeyboardContainer: HTMLElement,
     digitInputCallback: KeyInputCallback,
     config: Config,
   ) {
     this.container = container;
     this.gameBoard = gameBoard;
     this.virtualKeyboard = new VirtualKeyboard(
-      virtualKeyboardContainer,
+      this.container,
       (v, b) => {
         // Do not hide in draft mode.
         if (!b) {
@@ -255,10 +259,13 @@ export class BoardUi {
   updateConfig(config: Config): void {
     this.config = config;
 
-    // Remove all children at first.
-    while (this.container.firstChild) {
-      this.container.removeChild(this.container.firstChild);
-    }
+    // Remove all canvas children at first.
+    Array.from(this.container.children).forEach(child => {
+      if (!(child instanceof HTMLCanvasElement)) {
+        return;
+      }
+      this.container.removeChild(child);
+    })
 
     this.numberHighlightCanvas = this.createCanvas(1);
     this.neighHighlightCanvas = this.createCanvas(2);
