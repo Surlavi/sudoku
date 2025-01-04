@@ -177,6 +177,36 @@ const fn build_neigh_arr_map() -> NeighborArrayMap {
     ret
 }
 
+pub(crate) const fn get_all_idx_for_row(row: usize) -> [NodeIndexType; COLOR_COUNT] {
+    let mut ret = [0; COLOR_COUNT];
+    let mut i = 0;
+    while i < COLOR_COUNT {
+        ret[i] = row * COLOR_COUNT + i;
+        i += 1;
+    }
+    ret
+}
+
+pub(crate) const fn get_all_idx_for_col(col: usize) -> [NodeIndexType; COLOR_COUNT] {
+    let mut ret = [0; COLOR_COUNT];
+    let mut i = 0;
+    while i < COLOR_COUNT {
+        ret[i] = i * COLOR_COUNT + col;
+        i += 1;
+    }
+    ret
+}
+
+pub(crate) const fn get_all_idx_for_sqr(sqr: usize) -> [NodeIndexType; COLOR_COUNT] {
+    let mut ret = [0; COLOR_COUNT];
+    let mut i = 0;
+    while i < COLOR_COUNT {
+        ret[i] = (sqr / RANK * RANK + i / RANK) * COLOR_COUNT + (sqr % RANK * RANK + i % RANK);
+        i += 1;
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -84,6 +84,16 @@ impl Colors {
         ret
     }
 
+    fn minus(&mut self, other: &Colors) -> usize {
+        for i in 1..COLOR_COUNT+1 {
+            if self.arr[i] && other.arr[i] {
+                self.arr[i] = false;
+                self.cnt -= 1;
+            }
+        }
+        self.count()
+    }
+
     fn get_all(&self) -> Vec<u8> {
         let mut buffer = [0; COLOR_COUNT];
         let cnt = self.get_all_no_allocate(None, &mut buffer);
@@ -213,6 +223,75 @@ impl SolvingNodeArray {
                 return Some(neigh_idx);
             }
         }
+        None
+    }
+
+    #[allow(dead_code)]
+    fn eliminate_by_pairs(&mut self, fill_candidates: &mut NodeStack) -> Option<NodeIndexType> {
+        let mut check = |idxs: &[usize; 9]| {
+            let mut p2_idx = None;
+            let mut p2_idx_b = None;
+            for i in 0..9 {
+                let idx = idxs[i];
+                let cell = &self[idx as usize];
+                if cell.color != 0 {
+                    continue;
+                }
+                if cell.available_colors.count() == 2 {
+                    match p2_idx {
+                        Some(v) => {
+                            if cell.available_colors == self[v as usize].available_colors {
+                                p2_idx_b = Some(idx);
+                                break;
+                            }
+                        }
+                        None => p2_idx = Some(idx),
+                    }
+                }
+            }
+
+            if p2_idx_b.is_none() {
+                return None;
+            }
+
+            // println!("{:?} {:?}", p2_idx.unwrap(), self[p2_idx.unwrap() as usize].available_colors);
+            // println!("{:?} {:?}", p2_idx_b.unwrap(), self[p2_idx_b.unwrap() as usize].available_colors);
+
+            let colors = self[p2_idx.unwrap() as usize].available_colors;
+            for i in 0..9 {
+                let idx = idxs[i];
+                let cell = &mut self[idx as usize];
+                if cell.color != 0 {
+                    continue;
+                }
+                if idx == p2_idx.unwrap() || idx as usize == p2_idx_b.unwrap() {
+                    continue;
+                }
+                let cnt = cell.available_colors.minus(&colors);
+                if cnt == 1 {
+                    fill_candidates.push(idx as u8);
+                }
+                if cnt == 0 {
+                    // It's impossible to fill in this cell.
+                    return Some(idx as usize);
+                }
+            }
+
+            return None;
+        };
+
+        for i in 0..9 {
+            if let Some(v) = check(&get_all_idx_for_row(i)) {
+                return Some(v);
+            }
+            if let Some(v) = check(&get_all_idx_for_col(i)) {
+                return Some(v);
+            }
+            if let Some(v) = check(&get_all_idx_for_sqr(i)) {
+                return Some(v);
+            }
+        }
+
         None
     }
 
