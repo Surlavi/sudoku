@@ -2,13 +2,15 @@ use generator::{generate_answer, generate_puzzle_from_answer};
 use wasm_bindgen::prelude::*;
 
 mod core;
-mod generator;
-mod solve_utils;
 mod fast_solver;
+mod generator;
+mod scorer;
+mod solve_utils;
 
 use core::*;
 use solve_utils::SolveResult;
 use std::time::Duration;
+use scorer::simple_score;
 
 pub use generator::generate_puzzle;
 pub use generator::GeneratorConfig;

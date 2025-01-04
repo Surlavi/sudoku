@@ -115,6 +115,7 @@ fn nodes_sorted_by_colors_num(arr: &ColorArray) -> Vec<u8> {
 struct IntermediateResult {
     best_puzzle: Option<ColorArray>,
     best_hint_cnt: usize,
+    best_score: i32,
 }
 
 impl IntermediateResult {
@@ -122,12 +123,15 @@ impl IntermediateResult {
         Self {
             best_puzzle: None,
             best_hint_cnt: NODE_COUNT,
+            best_score: 0,
         }
     }
     fn update_puzzle(&mut self, puzzle: &ColorArray) {
         let cnt = puzzle.count_clues();
-        if cnt < self.best_hint_cnt {
+        let score = simple_score(puzzle);
+        if score > self.best_score {
             self.best_hint_cnt = cnt;
+            self.best_score = score;
             self.best_puzzle = Some(*puzzle);
         }
     }
@@ -330,5 +334,7 @@ mod tests {
             },
         );
         assert!(puzzle.count_clues() < 27);
+
+        println!("{}", simple_score(&puzzle));
     }
 }
