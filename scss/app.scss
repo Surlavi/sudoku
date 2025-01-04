@@ -121,11 +121,12 @@ body {
     padding: 48px 5px 5px;
     position: relative;
     width: 100%;
+    display: flex;
+    justify-content: space-between;
   }
 
   #board-banner>span {
     display: inline-block;
-    width: 33%;
   }
 
   #num-keyboard {

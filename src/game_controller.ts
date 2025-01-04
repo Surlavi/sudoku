@@ -27,10 +27,9 @@ function keyCodeToDirection(code: string): MoveDirection {
 const HTML_CONTENT = `
 <p id="notification" class="hidden">Prompt</p>
 <div id="board-banner">
-  <span style="text-align: left;">Time:&nbsp;<span id="value-timer">0:00</span>
-  </span><span style="text-align: center;">Mistakes:&nbsp;<span id="value-mistakes">0</span>&nbsp;
-  </span><span style="text-align: right;">Remaining:&nbsp;<span id="value-remaining">0</span>&nbsp;
-  </span>
+  <span>Time:&nbsp;<span id="value-timer">0:00</span></span>
+  <span>Mistakes:&nbsp;<span id="value-mistakes">0</span></span>
+  <span>Remaining:&nbsp;<span id="value-remaining">0</span></span>
 </div>
 <div id="board" style="position: relative;"></div>
 <div id="board-buttons">
