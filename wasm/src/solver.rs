@@ -250,20 +250,43 @@ impl NodeStack {
     }
 }
 
-impl SolvingNodeArray {
+struct FastSolver<'a> {
+    node_arr: SolvingNodeArray,
+    hint_answer: Option<&'a ColorArray>,
+}
+
+impl FastSolver<'_> {
+    fn solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
+        FastSolver::new(SolvingNodeArray::from(puzzle), hint_answer).eliminate_and_backtracing()
+    }
+
+    fn new(node_arr: SolvingNodeArray, hint_answer: Option<&ColorArray>) -> FastSolver<'_> {
+        FastSolver {
+            node_arr,
+            hint_answer,
+        }
+    }
+
+    fn eliminate_and_backtracing(&mut self) -> SolveResult {
+        if let Some(result) = self.eliminate_and_fill(None) {
+            return result;
+        }
+        self.back_tracing()
+    }
+
     // Returns the impossible node after the elimination.
     fn eliminate_with_idx(
         &mut self,
         idx: NodeIndexType,
         fill_candidates: &mut NodeStack,
     ) -> Option<NodeIndexType> {
-        let node = &self[idx];
+        let node = &self.node_arr[idx];
         if node.color == 0 {
             return None;
         }
         let color = node.color;
         for neigh_idx in NEIGHBOR_ARRAY_MAP[idx] {
-            let neigh = &mut self[neigh_idx];
+            let neigh = &mut self.node_arr[neigh_idx];
             if neigh.color != 0 {
                 continue;
             }
@@ -289,14 +312,14 @@ impl SolvingNodeArray {
             let mut p2_idx_b = None;
             for i in 0..9 {
                 let idx = idxs[i];
-                let cell = &self[idx as usize];
+                let cell = &self.node_arr[idx as usize];
                 if cell.color != 0 {
                     continue;
                 }
                 if cell.available_colors.count() == 2 {
                     match p2_idx {
                         Some(v) => {
-                            if cell.available_colors == self[v as usize].available_colors {
+                            if cell.available_colors == self.node_arr[v as usize].available_colors {
                                 p2_idx_b = Some(idx);
                                 break;
                             }
@@ -313,10 +336,10 @@ impl SolvingNodeArray {
             // println!("{:?} {:?}", p2_idx.unwrap(), self[p2_idx.unwrap() as usize].available_colors);
             // println!("{:?} {:?}", p2_idx_b.unwrap(), self[p2_idx_b.unwrap() as usize].available_colors);
 
-            let colors = self[p2_idx.unwrap() as usize].available_colors;
+            let colors = self.node_arr[p2_idx.unwrap() as usize].available_colors;
             for i in 0..9 {
                 let idx = idxs[i];
-                let cell = &mut self[idx as usize];
+                let cell = &mut self.node_arr[idx as usize];
                 if cell.color != 0 {
                     continue;
                 }
@@ -360,7 +383,7 @@ impl SolvingNodeArray {
             return self.eliminate_with_idx(val, fill_candidates);
         }
 
-        for i in 0..self.len() {
+        for i in 0..self.node_arr.len() {
             if let Some(v) = self.eliminate_with_idx(i, fill_candidates) {
                 return Some(v);
             }
@@ -374,13 +397,13 @@ impl SolvingNodeArray {
         let mut new_fill_candidates = NodeStack::new();
         while let Some(idx) = fill_candidates.pop() {
             let i = idx as usize;
-            if self[i].color != 0 {
+            if self.node_arr[i].color != 0 {
                 continue;
             }
-            if self[i].available_colors.count() != 1 {
+            if self.node_arr[i].available_colors.count() != 1 {
                 continue;
             }
-            self[i].color = self[i].available_colors.get_unique().unwrap();
+            self.node_arr[i].color = self.node_arr[i].available_colors.get_unique().unwrap();
             if self
                 .eliminate_with_idx(i, &mut new_fill_candidates)
                 .is_some()
@@ -405,47 +428,10 @@ impl SolvingNodeArray {
                 None => return Some(SolveResult::Invalid),
             }
         }
-        if self.uncolored_node_count() == 0 {
-            return Some(SolveResult::Unique(self.0.to_color_array()));
+        if self.node_arr.uncolored_node_count() == 0 {
+            return Some(SolveResult::Unique(self.node_arr.to_color_array()));
         }
         None
-    }
-}
-
-struct FastSolver<'a> {
-    node_arr: SolvingNodeArray,
-    hint_answer: Option<&'a ColorArray>,
-}
-
-impl FastSolver<'_> {
-    fn solve(puzzle: &ColorArray, hint_answer: Option<&ColorArray>) -> SolveResult {
-        let mut node_arr: SolvingNodeArray = SolvingNodeArray::from(puzzle);
-        if let Some(result) = node_arr.eliminate_and_fill(None) {
-            return result;
-        }
-        FastSolver::new(node_arr, hint_answer).solve_impl()
-    }
-
-    // Assumes that the passed-in SolvingNodeArray has been
-    // eliminate-and-fill-ed, so that this function will start from backtracing
-    // directly.
-    fn new(node_arr: SolvingNodeArray, hint_answer: Option<&ColorArray>) -> FastSolver<'_> {
-        #[cfg(debug_assertions)]
-        {
-            let mut node_arr_copy = node_arr;
-            let result = node_arr_copy.eliminate_and_fill(None);
-            if result.is_some() {
-                panic!();
-            }
-            if node_arr != node_arr_copy {
-                panic!();
-            }
-        }
-
-        FastSolver {
-            node_arr,
-            hint_answer,
-        }
     }
 
     // Returns the index of an uncolored node for backtracing.
@@ -466,7 +452,7 @@ impl FastSolver<'_> {
         min_idx
     }
 
-    fn solve_impl(&mut self) -> SolveResult {
+    fn back_tracing(&mut self) -> SolveResult {
         let idx = self.pick_up_uncolored_node().unwrap();
         let mut found_answer: Option<ColorArray> = None;
         let mut colors_buf = [0; COLOR_COUNT];
@@ -477,20 +463,17 @@ impl FastSolver<'_> {
         for &c in &colors_buf[0..colors_cnt] {
             let mut node_arr_copy = self.node_arr;
             node_arr_copy[idx].color = c;
-            // println!("filling {} to {}\n", c, idx);
-            let result = node_arr_copy
+            let mut child_solver = FastSolver::new(
+                node_arr_copy,
+                if Some(c) == hint_color {
+                    self.hint_answer
+                } else {
+                    None
+                },
+            );
+            let result = child_solver
                 .eliminate_and_fill(Some(idx))
-                .unwrap_or_else(|| {
-                    FastSolver::new(
-                        node_arr_copy,
-                        if Some(c) == hint_color {
-                            self.hint_answer
-                        } else {
-                            None
-                        },
-                    )
-                    .solve_impl()
-                });
+                .unwrap_or_else(|| child_solver.back_tracing());
             match result {
                 SolveResult::Invalid => continue,
                 SolveResult::Unique(answer) => {
