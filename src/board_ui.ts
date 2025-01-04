@@ -17,6 +17,8 @@ function drawLine(
 ): void {
   ctx.strokeStyle = style.color;
   ctx.lineWidth = style.width ? style.width : 1;
+  // Square is better for drawing border of the grid.
+  ctx.lineCap = 'square';
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
