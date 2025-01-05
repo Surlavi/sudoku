@@ -1,6 +1,11 @@
 @use "palettes.scss";
 
 body {
+  padding-top: env(safe-area-inset-top); /* Add padding for the top safe area (notch/status bar) */
+  padding-bottom: env(safe-area-inset-bottom); /* Add padding for the bottom safe area (home indicator on some iPhones) */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+
   margin: 0; /* Remove default body margins */
   font-family: sans-serif; /* Use a default font */
   display: flex; /* Enable flexbox for vertical centering */
