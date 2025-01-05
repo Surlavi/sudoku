@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
 use core::*;
-use generator::{generate_answer, generate_puzzle_from_answer, GeneratorConfig};
+use generator::{generate_answer, generate_puzzle_from_answer};
 use scorer::simple_score;
 use solve_utils::SolveResult;
 
@@ -13,6 +13,10 @@ mod generator;
 mod scorer;
 mod solve_utils;
 mod strategy_solver;
+
+// Required by the bench lib.
+pub use generator::GeneratorConfig;
+pub use generator::generate_puzzle;
 
 fn new_color_array_from_js_type(src: &[u8]) -> Result<ColorArray, JsError> {
     ColorArray::try_from(src).map_err(|err| JsError::new(&err.to_string()))
