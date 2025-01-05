@@ -132,6 +132,7 @@ class VirtualKeyboard {
 
     const handleStart = (e: MouseEvent | TouchEvent) => {
       isDragging = true;
+      c.classList.remove('fading-fast');
       offsetX =
         (e instanceof MouseEvent ? e.clientX : e.touches[0].clientX) -
         c.offsetLeft;
@@ -157,6 +158,7 @@ class VirtualKeyboard {
 
     const handleEnd = () => {
       isDragging = false;
+      c.classList.add('fading-fast');
     };
 
     c.addEventListener('mousedown', handleStart);
