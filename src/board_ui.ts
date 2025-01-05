@@ -43,7 +43,7 @@ export enum MoveDirection {
   LEFT,
 }
 
-const CANVAS_MARGIN = 5;
+const CANVAS_MARGIN = 16;
 
 export interface Config {
   // Size of the canvas.
