@@ -1,0 +1,275 @@
+:root {
+  --color-prefilled: white;
+  --color-solved: white;
+  --color-draft: white;
+  --color-highlight-fg: white;
+  --color-highlight-bg1: white;
+  --color-highlight-bg2: white;
+  --color-bg: white;
+  --default-color-prefilled: #050505;
+  --default-color-solved: #156363;
+  --default-color-draft: #447862;
+  --default-color-highlight-fg: #007896;
+  --default-color-highlight-bg1: #dcc1c3;
+  --default-color-highlight-bg2: #dcd1d180;
+  --default-color-bg: #fefefe;
+}
+
+body {
+  user-select: none;
+  background-color: var(--color-bg);
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  overflow: hidden;
+}
+
+#app-container {
+  box-sizing: border-box;
+  flex: 1 0 auto;
+  width: 640px;
+  margin: 0 auto;
+  position: relative;
+}
+
+#app-container > div.page {
+  opacity: 0;
+  z-index: -100;
+}
+
+#app-container > div.page.visible {
+  opacity: 1;
+  z-index: 0;
+}
+
+@media (width <= 640px) {
+  #app-container {
+    max-width: 100%;
+  }
+}
+
+.hidden {
+  z-index: -200 !important;
+  opacity: 0 !important;
+}
+
+#init-page {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  position: absolute;
+}
+
+#init-page > div {
+  text-align: center;
+  width: 30%;
+  margin: 40px;
+  padding: 20px;
+  font-size: 2em;
+}
+
+#loading-page {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  font-size: 3em;
+  display: flex;
+  position: absolute;
+}
+
+.btn-default {
+  user-select: none;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  transition: background-color .2s, color .2s, border-color .2s;
+}
+
+.btn-default.highlight {
+  color: var(--color-highlight-fg);
+  border-color: var(--color-highlight-fg);
+}
+
+.btn-default.enabled {
+  cursor: pointer;
+}
+
+.btn-default.disabled {
+  opacity: .3;
+}
+
+.btn-default.enabled:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-default.enabled:active {
+  background-color: #d0d0d0;
+}
+
+#game-page {
+  position: relative;
+}
+
+#game-page > div {
+  box-sizing: border-box;
+}
+
+#game-page #notification {
+  text-align: center;
+  width: 100%;
+  color: var(--color-draft);
+  transition: all .7s ease-in-out;
+  position: absolute;
+}
+
+#game-page #board-banner {
+  justify-content: space-between;
+  width: 100%;
+  padding: 48px 5px 5px;
+  display: flex;
+  position: relative;
+}
+
+#game-page #board-banner > span {
+  display: inline-block;
+}
+
+#game-page #num-keyboard {
+  z-index: 100;
+  background: #fff;
+  border: 2px solid #a9a9a9;
+  border-radius: 20px;
+  width: 200px;
+  padding: 12px;
+  position: absolute;
+}
+
+#game-page #num-keyboard #draft-mode-line {
+  vertical-align: middle;
+  height: 26px;
+  margin-bottom: 12px;
+  line-height: 26px;
+}
+
+#game-page #num-keyboard .keyboard {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+}
+
+#game-page #num-keyboard .key {
+  justify-content: center;
+  align-items: center;
+  font-family: monospace;
+  font-size: 36px;
+  display: flex;
+}
+
+#game-page #num-keyboard .switch-container {
+  align-items: center;
+  margin-top: 20px;
+  display: flex;
+}
+
+#game-page #num-keyboard .switch {
+  width: 48px;
+  height: 26px;
+  display: inline-block;
+  position: relative;
+}
+
+#game-page #num-keyboard .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+#game-page #num-keyboard .slider {
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 26px;
+  height: 26px;
+  transition: all .1s;
+  position: absolute;
+  inset: 0;
+}
+
+#game-page #num-keyboard .slider:before {
+  content: "";
+  background-color: #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  transition: all .1s;
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+}
+
+#game-page #num-keyboard input:checked + .slider {
+  background-color: var(--color-highlight-fg);
+}
+
+#game-page #num-keyboard input:focus + .slider {
+  box-shadow: 0 0 1px var(--color-highlight-fg);
+}
+
+#game-page #num-keyboard input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+#game-page #num-keyboard .switch-label {
+  margin-right: 10px;
+}
+
+#game-page #board-buttons {
+  text-align: center;
+  flex-flow: wrap;
+  justify-content: space-around;
+  row-gap: 30px;
+  margin: 4px;
+  padding: 24px 0;
+  font-size: 1.2em;
+  display: flex;
+}
+
+#game-page #board-buttons > span {
+  width: 18%;
+  min-width: 120px;
+  display: inline-block;
+}
+
+@media (width <= 600px) {
+  #game-page #board-buttons > span {
+    flex-basis: 34%;
+  }
+}
+
+.fading {
+  transition: opacity .5s ease-in-out;
+}
+
+.fading-fast {
+  transition: all 80ms ease-in-out;
+}
+
+#build-info {
+  text-align: right;
+  color: #d3d3d3;
+  padding-right: 10px;
+  font-size: 10px;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+}
+/*# sourceMappingURL=index.737024df.css.map */
