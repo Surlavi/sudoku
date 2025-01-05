@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>For generating icon</title>
+<style>
+body { margin: 0; }
+</style>
+</head>
+<body>
+
+<script>
+function canvasToSVG(size, numbers) {
+  const gridSize = 3;
+  const cellSize = size / gridSize;
+  const lineWidth = 4;
+  const fontSize = cellSize * 0.6;
+
+  let svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Background
+  svg += `<rect width="${size}" height="${size}" fill="#fefefe" />`;
+
+  // Inner grid lines
+  for (let i = 1; i < gridSize; i++) {
+    const x = i * cellSize;
+    const y = i * cellSize;
+    svg += `<line x1="${x}" y1="0" x2="${x}" y2="${size}" stroke="black" stroke-width="${lineWidth}" />`;
+    svg += `<line x1="0" y1="${y}" x2="${size}" y2="${y}" stroke="black" stroke-width="${lineWidth}" />`;
+  }
+
+  svg += `<g font-family="sans-serif" font-size="${fontSize}" text-anchor="middle" dominant-baseline="middle" fill="black">`;
+  // Numbers;
+  for (let row = 0; row < gridSize; row++) {
+    for (let col = 0; col < gridSize; col++) {
+      if (numbers[row][col] !== 0) {
+        const x = (col + 0.5) * cellSize;
+        const y = (row + 0.6) * cellSize;
+        let textStyle = "";
+        if (numbers[row][col] != 1){
+            textStyle = 'fill="black"';
+        } else {
+            textStyle = 'fill="#156363"';
+        }
+        svg += `<text x="${x}" y="${y}" ${textStyle}>${numbers[row][col]}</text>`;
+            
+      }
+    }
+  }
+  svg += `</g>`;
+
+  svg += `</svg>`;
+  return svg;
+}
+
+const numbersWithEmpty = [
+  [9, 0, 3],
+  [0, 2, 6],
+  [1, 4, 5]
+];
+
+const svgString = canvasToSVG(512, numbersWithEmpty);
+console.log(svgString);
+const img = document.createElement('img');
+const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+const url = URL.createObjectURL(svgBlob);
+img.src = url;
+document.body.appendChild(img);
+
+</script>
+
+</body>
+</html>
