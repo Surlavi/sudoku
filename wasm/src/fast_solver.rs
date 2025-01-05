@@ -192,7 +192,7 @@ impl FastSolver<'_> {
     // Returns the index of an uncolored node for backtracing.
     // Returns the one with the least number of available colors.
     fn pick_up_uncolored_node(&self) -> Option<NodeIndexType> {
-        let mut min_colors = COLOR_COUNT;
+        let mut min_colors = COLOR_COUNT + 1;
         let mut min_idx = None;
         for i in 0..NODE_COUNT {
             if self.node_arr[i].color != 0 {
@@ -326,5 +326,12 @@ mod tests {
 
         let result = solve(&puzzle);
         assert_eq!(result, SolveResult::Unique(answer));
+    }
+
+    #[test]
+    fn solve_result_multiple() {
+        let puzzle = [0; NODE_COUNT];
+        let result = solve(&puzzle);
+        assert_eq!(result, SolveResult::Multiple);
     }
 }
