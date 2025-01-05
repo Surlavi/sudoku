@@ -41,7 +41,6 @@ async function main() {
 
   // Get the difficulty selected by the user.
   const difficulty = await waitForDifficultyInput();
-  const clues = (4 - difficulty) * 14 - 9;
 
   // Show the loading page.
   switchPage(loadingPageDom);
@@ -55,10 +54,11 @@ async function main() {
   console.debug('wasm loaded');
 
   // Create a random game.
-  console.debug('Generating game with %d clues', clues);
+  console.debug('Generating game with difficulty: %d', difficulty);
   const puzzleArr = new Uint8Array(types.CELLS_NUMBER);
-  wasm.generate(clues, puzzleArr);
+  const score = wasm.generate(difficulty, puzzleArr);
   console.debug('Puzzle generated: ', puzzleArr);
+  console.info('Puzzle score: ', score);
   const answerArr = new Uint8Array(puzzleArr);
   wasm.fast_solve(answerArr);
   console.debug('Answer generated: ', answerArr);

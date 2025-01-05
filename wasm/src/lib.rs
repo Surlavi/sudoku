@@ -1,5 +1,6 @@
 use std::time::Duration;
 use wasm_bindgen::prelude::*;
+use web_time::Instant;
 
 use core::*;
 use generator::{generate_answer, generate_puzzle_from_answer, GeneratorConfig};
@@ -40,15 +41,35 @@ pub fn fast_solve(board: &mut [u8]) -> Result<usize, JsError> {
 }
 
 #[wasm_bindgen]
-pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) -> i32 {
+pub fn generate(difficulty: u8, output_puzzle: &mut [u8]) -> i32 {
     let answer = generate_answer();
-    let puzzle = generate_puzzle_from_answer(
-        &answer,
-        GeneratorConfig {
-            timeout: Some(Duration::from_secs(5)),
-            target_clues_num: non_empty_cnt as NodeIndexType,
-        },
-    );
-    fill_color_array_to_js_type(&puzzle, output_puzzle);
-    simple_score(&puzzle)
+    let target_clues = (4 - difficulty) * 14 - 9;
+    let min_score = match difficulty {
+        0 => 0,
+        1 => 150,
+        2 => 1000,
+        _ => 2000,
+    };
+    let max_score = match difficulty {
+        0 => 200,
+        1 => 500,
+        _ => 10000,
+    };
+    let timeout= Duration::from_secs(3);
+    let now = Instant::now();
+    loop {
+        let puzzle = generate_puzzle_from_answer(
+            &answer,
+            GeneratorConfig {
+                timeout: Some(timeout),
+                target_clues_num: target_clues as NodeIndexType,
+            },
+        );
+        let score = simple_score(&puzzle); 
+        if (score < min_score || score > max_score) && now.elapsed() < timeout {
+            continue;
+        }
+        fill_color_array_to_js_type(&puzzle, output_puzzle);
+        return score;
+    }
 }
