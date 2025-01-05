@@ -1,4 +1,15 @@
-### Development
+## Changelog
+
+### 0.1.0
+
+- Add basic game play, including:
+  - Generate a random Sudoku puzzle with 3 levels of difficulty.
+  - Physical keyboard support and touch screen support.
+  - Highlight the cells/numbers on the board on clicking.
+  - Save / load the current state during a game.
+  - "Quick draft" functionality to add all the possible draft numbers in unsolved cells.
+
+## Development
 
 - Environment
   - Tested with
@@ -18,10 +29,9 @@
 - Publish demo to GitHub Pages:
   - `sh publish.sh`
 
-# TODO list
-- Increase default difficulty (make generator more efficient).
+## TODO list
 - Helps for keyboard shortcut.
-- Configuration for new games (difficulty, penalty on mistakes, etc.).
+- More configuration for new games (penalty on mistakes, etc.).
 - UI theme settings.
 - Hint supports.
 - Multiplayer supports?
