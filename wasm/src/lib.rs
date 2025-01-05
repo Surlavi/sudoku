@@ -1,5 +1,10 @@
-use generator::{generate_answer, generate_puzzle_from_answer};
+use std::time::Duration;
 use wasm_bindgen::prelude::*;
+
+use core::*;
+use generator::{generate_answer, generate_puzzle_from_answer, GeneratorConfig};
+use scorer::simple_score;
+use solve_utils::SolveResult;
 
 mod core;
 mod fast_solver;
@@ -7,14 +12,6 @@ mod generator;
 mod scorer;
 mod solve_utils;
 mod strategy_solver;
-
-use core::*;
-use scorer::simple_score;
-use solve_utils::SolveResult;
-use std::time::Duration;
-
-pub use generator::generate_puzzle;
-pub use generator::GeneratorConfig;
 
 fn new_color_array_from_js_type(src: &[u8]) -> Result<ColorArray, JsError> {
     ColorArray::try_from(src).map_err(|err| JsError::new(&err.to_string()))
@@ -43,7 +40,7 @@ pub fn fast_solve(board: &mut [u8]) -> Result<usize, JsError> {
 }
 
 #[wasm_bindgen]
-pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) {
+pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) -> i32 {
     let answer = generate_answer();
     let puzzle = generate_puzzle_from_answer(
         &answer,
@@ -53,4 +50,5 @@ pub fn generate(non_empty_cnt: u8, output_puzzle: &mut [u8]) {
         },
     );
     fill_color_array_to_js_type(&puzzle, output_puzzle);
+    simple_score(&puzzle)
 }

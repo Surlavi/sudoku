@@ -15,6 +15,7 @@ pub enum SolveResult {
     Multiple,
 }
 
+// Set of colors. Specialized and optimized for the sudoku use case.
 pub trait ColorSet: Debug + Clone + Copy {
     fn new(val: bool) -> Self;
 
@@ -28,12 +29,12 @@ pub trait ColorSet: Debug + Clone + Copy {
     fn get_unique(&self) -> Option<u8> {
         let mut ret = None;
         for i in 1..COLOR_COUNT + 1 {
-            if !self.has(i as u8) {
+            if !self.has(i as ColorType) {
                 continue;
             }
             match ret {
                 Some(_) => return None,
-                None => ret = Some(i as u8),
+                None => ret = Some(i as ColorType),
             }
         }
         ret
@@ -51,7 +52,7 @@ pub trait ColorSet: Debug + Clone + Copy {
         let start_idx = hint_color.unwrap_or(1) - 1;
         for j in 0..COLOR_COUNT {
             // Note: start from the hint seems to be faster.
-            let i = (start_idx + j as u8) % (COLOR_COUNT as u8) + 1;
+            let i = (start_idx + j as ColorType) % (COLOR_COUNT as ColorType) + 1;
             if self.has(i) {
                 output_buffer[ret] = i;
                 ret += 1;
@@ -73,6 +74,7 @@ pub trait ColorSet: Debug + Clone + Copy {
     }
 }
 
+// Based a boolean array. The performance is good with SIMD.
 #[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 pub struct ColorVec {
@@ -136,6 +138,7 @@ impl Debug for ColorVec {
     }
 }
 
+// Based on a u16 with each bit representing a color.
 #[derive(Clone, Copy, PartialEq)]
 pub struct ColorBits {
     colors: u16,
@@ -239,15 +242,17 @@ impl<T: ColorSet> Debug for SolvingNode<T> {
 
 pub type SolvingNodeArray<T> = SudokuArrayType<SolvingNode<T>>;
 
+// A stack for storing node indexes. Size is fixed since it does not allow
+// duplicated items in the stack.
 #[derive(Clone, Copy)]
-pub struct NodeStack {
+pub struct NodeIdxStack {
     items: [u8; NODE_COUNT],
     cnt: u8,
 }
 
-impl NodeStack {
+impl NodeIdxStack {
     pub fn new() -> Self {
-        NodeStack {
+        NodeIdxStack {
             items: [0; NODE_COUNT],
             cnt: 0,
         }

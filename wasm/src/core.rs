@@ -135,7 +135,7 @@ const fn get_neighs_for_idx(idx: usize) -> NeighborArray {
     let sqr = sqr_idx(idx);
 
     let mut i = 0;
-    while i < 9 {
+    while i < COLOR_COUNT {
         // Neighbors on the same row.
         bit_array[row * COLOR_COUNT + i] = true;
         // Neighbors on the same column.
@@ -160,6 +160,7 @@ const fn get_neighs_for_idx(idx: usize) -> NeighborArray {
         i += 1;
     }
 
+    // Note: we cannot use assert in a const function.
     if j != NEIGHBOR_COUNT {
         panic!("Unexpected neighbor count");
     }
@@ -205,16 +206,4 @@ pub(crate) const fn get_all_idx_for_sqr(sqr: usize) -> [NodeIndexType; COLOR_COU
         i += 1;
     }
     ret
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        // let result = add(2, 2);
-        // assert_eq!(result, 4);
-        build_neigh_arr_map();
-    }
 }

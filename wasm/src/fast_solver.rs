@@ -33,7 +33,7 @@ impl FastSolver<'_> {
     fn eliminate_with_idx(
         &mut self,
         idx: NodeIndexType,
-        fill_candidates: &mut NodeStack,
+        fill_candidates: &mut NodeIdxStack,
     ) -> Option<NodeIndexType> {
         let node = &self.node_arr[idx];
         if node.color == 0 {
@@ -63,7 +63,7 @@ impl FastSolver<'_> {
     fn eliminate(
         &mut self,
         idx: Option<NodeIndexType>,
-        fill_candidates: &mut NodeStack,
+        fill_candidates: &mut NodeIdxStack,
     ) -> Option<NodeIndexType> {
         if let Some(val) = idx {
             return self.eliminate_with_idx(val, fill_candidates);
@@ -79,8 +79,8 @@ impl FastSolver<'_> {
 
     // Consumes `fill_candidates`, returns the next round of fill candidates, or
     // None if we found that the puzzle is not solvable.
-    fn fill_all(&mut self, fill_candidates: &mut NodeStack) -> Option<NodeStack> {
-        let mut new_fill_candidates = NodeStack::new();
+    fn fill_all(&mut self, fill_candidates: &mut NodeIdxStack) -> Option<NodeIdxStack> {
+        let mut new_fill_candidates = NodeIdxStack::new();
         while let Some(idx) = fill_candidates.pop() {
             let i = idx as usize;
             if self.node_arr[i].color != 0 {
@@ -102,7 +102,7 @@ impl FastSolver<'_> {
     }
 
     fn eliminate_and_fill(&mut self, idx: Option<NodeIndexType>) -> Option<SolveResult> {
-        let mut fill_candidates = NodeStack::new();
+        let mut fill_candidates = NodeIdxStack::new();
 
         if self.eliminate(idx, &mut fill_candidates).is_some() {
             return Some(SolveResult::Invalid);
