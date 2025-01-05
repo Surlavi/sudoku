@@ -6,11 +6,12 @@ mod fast_solver;
 mod generator;
 mod scorer;
 mod solve_utils;
+mod strategy_solver;
 
 use core::*;
+use scorer::simple_score;
 use solve_utils::SolveResult;
 use std::time::Duration;
-use scorer::simple_score;
 
 pub use generator::generate_puzzle;
 pub use generator::GeneratorConfig;
