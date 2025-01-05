@@ -119,7 +119,7 @@ body {
   }
 
   &.enabled:hover {
-    background-color: #e0e0e0;
+    background-color: #F2EAE0;
   }
 
   &.enabled:active {
@@ -167,22 +167,17 @@ body {
     position: absolute;
     width: calc(200px * var(--scale-factor));
     z-index: 100;
-    background: white;
+    background: var(--color-bg);
     border-radius: calc(20px * var(--scale-factor));
-    ;
     border: darkgray calc(2px * var(--scale-factor)) solid;
     padding: calc(12px * var(--scale-factor));
-    ;
-
-    @media (max-width: $breakpoint) {
-      width: 40%;
-    }
 
     #draft-mode-line {
       vertical-align: middle;
       height: calc(26px * var(--scale-factor));
       line-height: calc(26px * var(--scale-factor));
       margin-bottom: calc(12px * var(--scale-factor));
+      font-size: calc(1em * var(--scale-factor));
     }
 
     .keyboard {

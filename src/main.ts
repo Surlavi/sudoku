@@ -32,7 +32,9 @@ function switchPage(to: HTMLElement) {
 async function main() {
   theme.init();
 
-  document.documentElement.style.setProperty('--scale-factor', `${document.body.clientWidth / 640}`);
+  const appContainerDom = document.getElementById('app-container')!;
+
+  document.documentElement.style.setProperty('--scale-factor', `${appContainerDom.clientWidth / 640}`);
 
   const initPageDom = document.getElementById('init-page')!;
   const loadingPageDom = document.getElementById('loading-page')!;

@@ -16,7 +16,7 @@ const CURRENT_THEME: Theme = {
   colorHighlightFg: '#007896',
   colorHighlightBg1: rgba('#dcc1c3', 1),
   colorHighlightBg2: rgba('#dcd1d1', 0.5),
-  colorBg: '#fefefe',
+  colorBg: '#F7F3E8',
 };
 
 export function getCurrentTheme(): Theme {
