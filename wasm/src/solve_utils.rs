@@ -176,7 +176,7 @@ impl ColorSet for ColorBits {
     }
 
     fn minus(&mut self, other: &Self) -> usize {
-        self.colors &= other.colors;
+        self.colors &= !other.colors;
         self.count()
     }
 }

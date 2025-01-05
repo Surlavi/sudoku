@@ -26,6 +26,38 @@ fn eliminate_color_at_neighs_to_idx(
     cnt
 }
 
+fn idx_arr_intersection(
+    a: &[NodeIndexType; COLOR_COUNT],
+    b: &[NodeIndexType; COLOR_COUNT],
+) -> [NodeIndexType; 3] {
+    let mut cnt = 0;
+    let mut ret = [0; 3];
+    for &i in a {
+        if b.contains(&i) {
+            ret[cnt] = i;
+            cnt += 1;
+        }
+    }
+    debug_assert_eq!(cnt, 3);
+    ret
+}
+
+fn idx_arr_minus(
+    a: &[NodeIndexType; COLOR_COUNT],
+    b: &[NodeIndexType; COLOR_COUNT],
+) -> [NodeIndexType; 6] {
+    let mut cnt = 0;
+    let mut ret = [0; 6];
+    for &i in a {
+        if !b.contains(&i) {
+            ret[cnt] = i;
+            cnt += 1;
+        }
+    }
+    debug_assert_eq!(cnt, 6);
+    ret
+}
+
 trait PartialScorer {
     // Returns the number of state eliminated.
     fn work(&self, node_arr: &mut NodeArray) -> i32;
@@ -58,6 +90,7 @@ impl PartialScorer for UniqueDraftFiller {
             debug_assert_ne!(node_arr[i].available_colors.count(), 0);
             if let Some(v) = node_arr[i].available_colors.get_unique() {
                 node_arr[i].color = v;
+                node_arr[i].available_colors.clear();
                 cnt += 1;
             }
         }
@@ -232,6 +265,7 @@ impl PartialScorer for NonBacktracingScorer {
         let hidden_group_eliminator_1 = HiddenGroupEliminator { group_size: 1 };
         let hidden_group_eliminator_2 = HiddenGroupEliminator { group_size: 2 };
         let hidden_group_eliminator_3 = HiddenGroupEliminator { group_size: 3 };
+        let intersection_eliminator = IntersectionEliminator {};
 
         let eliminate_and_fill = |node_arr: &mut NodeArray, score: &mut i32| -> bool {
             let start_score = *score;
@@ -251,6 +285,7 @@ impl PartialScorer for NonBacktracingScorer {
                 break;
             }
             score += 2 * hidden_group_eliminator_1.work(node_arr);
+            score += 3 * intersection_eliminator.work(node_arr);
             score += 4 * non_hidden_group_eliminator_2.work(node_arr);
             score += 8 * hidden_group_eliminator_2.work(node_arr);
             score += 9 * non_hidden_group_eliminator_3.work(node_arr);
@@ -258,6 +293,86 @@ impl PartialScorer for NonBacktracingScorer {
         }
 
         return score;
+    }
+}
+
+struct IntersectionEliminator {}
+
+fn eliminate_by_intersection(
+    node_arr: &mut NodeArray,
+    idx_a: &[NodeIndexType; COLOR_COUNT],
+    idx_b: &[NodeIndexType; COLOR_COUNT],
+) -> i32 {
+    let get_color_super_set = |idx_arr: &[NodeIndexType]| {
+        let mut ret = ColorBits::new(false);
+        for &idx in idx_arr {
+            let node = node_arr[idx];
+            if node.color != 0 {
+                continue;
+            }
+            ret |= node.available_colors;
+        }
+        ret
+    };
+
+    let intersect_idx_arr = idx_arr_intersection(idx_a, idx_b);
+    let diff_a_idx_arr = idx_arr_minus(idx_a, idx_b);
+    let diff_b_idx_arr = idx_arr_minus(idx_b, idx_a);
+
+    let inter_color_set = get_color_super_set(&intersect_idx_arr);
+    let diff_a_color_set = get_color_super_set(&diff_a_idx_arr);
+    let diff_b_color_set = get_color_super_set(&diff_b_idx_arr);
+
+    let mut cnt = 0;
+
+    let mut inter_color_set_not_in_b = inter_color_set;
+    inter_color_set_not_in_b.minus(&diff_b_color_set);
+    for c in inter_color_set_not_in_b.get_all() {
+        for idx in diff_a_idx_arr {
+            let node = &mut node_arr[idx];
+            if node.color != 0 {
+                continue;
+            }
+            if node.available_colors.del(c) {
+                cnt += 1;
+            }
+        }
+    }
+
+    let mut inter_color_set_not_in_a = inter_color_set;
+    inter_color_set_not_in_a.minus(&diff_a_color_set);
+    for c in inter_color_set_not_in_a.get_all() {
+        for idx in diff_b_idx_arr {
+            let node = &mut node_arr[idx];
+            if node.color != 0 {
+                continue;
+            }
+            if node.available_colors.del(c) {
+                cnt += 1;
+            }
+        }
+    }
+
+    cnt
+}
+
+impl PartialScorer for IntersectionEliminator {
+    fn work(&self, node_arr: &mut NodeArray) -> i32 {
+        let mut cnt = 0;
+        for i in 0..COLOR_COUNT {
+            let sqr = get_all_idx_for_sqr(i);
+            for j in 0..COLOR_COUNT {
+                let row = get_all_idx_for_row(j);
+                let col = get_all_idx_for_col(j);
+                if i % 3 == j / 3 {
+                    cnt += eliminate_by_intersection(node_arr, &sqr, &col);
+                }
+                if i / 3 == j / 3 {
+                    cnt += eliminate_by_intersection(node_arr, &sqr, &row);
+                }
+            }
+        }
+        cnt
     }
 }
 
@@ -340,5 +455,23 @@ mod tests {
             node_arr[2].available_colors.get_all(),
             vec![1, 2, 3, 4, 5, 6, 7]
         );
+    }
+
+    #[test]
+    fn intersection_eliminator() {
+        let board = [0u8; NODE_COUNT];
+        let mut node_arr = NodeArray::from_color_array(&board);
+        for i in 3..COLOR_COUNT {
+            node_arr[i].available_colors.del(1);
+        }
+
+        let solver = IntersectionEliminator {};
+        assert!(solver.work(&mut node_arr) > 0);
+        for &i in get_all_idx_for_sqr(0)[3..].into_iter() {
+            assert_eq!(
+                node_arr[i].available_colors.get_all(),
+                vec![2, 3, 4, 5, 6, 7, 8, 9]
+            );
+        }
     }
 }
