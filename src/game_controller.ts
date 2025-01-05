@@ -55,7 +55,7 @@ export class GameController {
     this.pageDom = pageDom;
 
     // Update the internal html.
-    this.pageDom.setHTMLUnsafe(HTML_CONTENT);
+    this.pageDom.innerHTML = HTML_CONTENT;
 
     // Initialize the banner.
     this.refreshBanner();

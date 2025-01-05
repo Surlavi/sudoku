@@ -86,7 +86,7 @@ class VirtualKeyboard {
     this.container = document.createElement('div');
     this.container.id = VIRTUAL_KEYBOARD_ID;
     parent.appendChild(this.container);
-    this.container.setHTMLUnsafe(VIRTUAL_KB_HTML);
+    this.container.innerHTML = VIRTUAL_KB_HTML;
     this.container.classList.add('fading-fast');
     this.cb = keyInputCallback;
 

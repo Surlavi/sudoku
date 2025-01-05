@@ -31,6 +31,7 @@ body {
   // So that double-click won't select any items.
   user-select: none;
   background-color: var(--color-bg);
+  // background-image: linear-gradient(to bottom, var(--color-bg), #F5F0E0);
 }
 
 #app-container {
