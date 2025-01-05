@@ -7,5 +7,6 @@
     }
   ],
   "start_url": "../index.html",
-  "display": "fullscreen"
+  "display": "fullscreen",
+  "theme_color": "#F7F3E8"
 }
