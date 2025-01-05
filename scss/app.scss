@@ -129,6 +129,10 @@ body {
 
 #game-page {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100vh;
 
   >div {
     box-sizing: border-box;
@@ -143,7 +147,7 @@ body {
   }
 
   #board-banner {
-    padding: 48px 16px 0px;
+    padding: 0px 16px;
     position: relative;
     width: 100%;
     display: flex;
@@ -164,9 +168,11 @@ body {
     width: calc(200px * var(--scale-factor));
     z-index: 100;
     background: white;
-    border-radius: calc(20px * var(--scale-factor));;
+    border-radius: calc(20px * var(--scale-factor));
+    ;
     border: darkgray calc(2px * var(--scale-factor)) solid;
-    padding: calc(12px * var(--scale-factor));;
+    padding: calc(12px * var(--scale-factor));
+    ;
 
     @media (max-width: $breakpoint) {
       width: 40%;
